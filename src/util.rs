@@ -1,6 +1,6 @@
 extern crate num;
 
-use num::{Num, NumCast, Float};
+use num::{Num, Float};
 use core::ops::{Neg, Sub};
 use std::fmt::Debug;
 
@@ -42,7 +42,7 @@ pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &Vec<T>) -> Vec<T> {
 pub fn diff_log<T: Float>(x: &Vec<T>) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
     for i in 1..x.len() {
-        y.push((x[i].ln() - x[i-1].ln()));
+        y.push(x[i].ln() - x[i-1].ln());
     }
     y
 }

@@ -23,7 +23,7 @@ mod test_util {
         let x_diff = arima::util::diff(&x);
 
         for i in 0..y.len() {
-            assert_lt!((x_diff[i] - y[i] as f64).abs(), 1.0e7);
+            assert_lt!((x_diff[i] - y[i] as f64).abs(), 1.0e-7);
         }
     }
 
@@ -34,7 +34,9 @@ mod test_util {
         let x_diff = arima::util::diff_log(&x);
 
         for i in 0..y.len() {
-            assert_lt!((x_diff[i] - y[i] as f64).abs(), 1.0e7);
+            assert_lt!((x_diff[i] - y[i] as f64).abs(), 1.0e-7);
         }
     }
+
+
 }
