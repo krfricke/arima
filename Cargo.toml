@@ -1,0 +1,12 @@
+[package]
+name = "arima"
+version = "0.1.0"
+authors = ["Kai Fricke <coding@kaifricke.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+num = "0.2.0"
+more-asserts = "0.2.1"
+# lapack = "0.16.0"
