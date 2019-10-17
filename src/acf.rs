@@ -2,11 +2,10 @@ use crate::util;
 
 use num::Float;
 use std::cmp;
-use std::fmt::Debug;
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div};
 
-pub fn acf<T: Float + From<u32> + From<f64> + Copy + Sum + Add + AddAssign + Div + Debug>(
+pub fn acf<T: Float + From<u32> + From<f64> + Copy + Sum + Add + AddAssign + Div>(
     x: &Vec<T>,
     max_lag: Option<u32>,
     covariance: bool
