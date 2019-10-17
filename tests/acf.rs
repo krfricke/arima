@@ -2,7 +2,12 @@
 mod test_acf {
     use more_asserts::assert_lt;
 
-    // AR(3) model with phi=[0.8, -0.5, 0.3], mean=20.0, sd=40.0
+    /// AR(3) model with phi=[0.8, -0.5, 0.3], mean=20.0, sd=40.0
+    /// Solutions created with R script:
+    /// ```R
+    /// set.seed(1000)
+    /// x <- round(as.vector(arima.sim(model=list(ar=c(0.8, -0.5, 0.3)), 20, mean=20.0, sd=40.0)), 10)
+    /// ```
     const AR3: [f64; 20] = [
         149.8228533548, 86.8388399871, 42.3116899484, 76.6796578536, 60.3665347774,
         66.7733563129, -5.1144504108, 14.0294086329, 76.2517878809, 121.2898170491,
