@@ -4,8 +4,10 @@ extern crate lapack;
 use num::Float;
 
 use std::cmp;
+use std::convert::From;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
+
 
 
 #[derive(Debug, Clone)]
@@ -24,14 +26,14 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     let m = max_lag + 1;
 
     let len_x_usize = x.len();
-    let len_x: T = std::convert::From::from(len_x_usize as u32);
-    let sum: T = std::convert::From::from(0.0);
+    let len_x: T = From::from(len_x_usize as u32);
+    let sum: T = From::from(0.0);
 
     let sum_x: T = x.iter().fold(sum, |sum, &xi| sum + xi);
     let mean_x: T = sum_x / len_x;
 
     //let mut y: Vec<T> = Vec::with_capacity(max_lag);
-    let mut y: Vec<T> = vec![std::convert::From::from(0.0); m];
+    let mut y: Vec<T> = vec![From::from(0.0); m];
 
     for t in 0..m {
         for i in 0..len_x_usize-t {
@@ -45,7 +47,7 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
         }
     }
     if !covariance {
-        y[0] = std::convert::From::from(1.0);
+        y[0] = From::from(1.0);
     }
     Ok(y)
 }
@@ -103,15 +105,45 @@ pub fn ar_coef_rho<T: Float + From<f64> + Into<f64> + Copy>(
     }
 
     // convert back to T
-    let mut x: Vec<T> = vec![std::convert::From::from(0.0); n];
+    let mut phi: Vec<T> = vec![From::from(0.0); n];
     for i in 0..n {
-        x[i] = std::convert::Into::into(b[i]);
+        phi[i] = std::convert::Into::into(b[i]);
     }
-    Ok(x)
+    Ok(phi)
+}
+
+pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign + Div>(
+    x: &[T],
+    order: Option<u32>
+) -> Result<T, MathError> {
+    let max_lag = match order {
+        Some(order) => Some(order + 1),
+        None => None
+    };
+    let rho = acf(&x, max_lag, false).unwrap();
+    let phi = ar_coef_rho(&rho, order).unwrap();
+    let cov0 = acf(&x, Some(0), true).unwrap()[0].clone();
+
+    var_phi_rho_cov(&phi, &rho, cov0)
+}
+
+pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
+    phi: &[T],
+    rho: &[T],
+    cov0: T
+) -> Result<T, MathError> {
+    assert!(rho.len() > phi.len());
+
+    let mut sum: T = From::from(0.0);
+    for i in 0..phi.len() {
+        sum += phi[i] * rho[i+1];
+    }
+    let one: T = From::from(1.0);
+    Ok(cov0 * (one - sum))
 }
 
 pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
-    x: &Vec<T>,
+    x: &[T],
     max_lag: Option<u32>
 ) -> Result<Vec<T>, MathError> {
     // get autocorrelations
@@ -120,7 +152,7 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 }
 
 pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
-    rho: &Vec<T>,
+    rho: &[T],
     max_lag: Option<u32>
 ) -> Result<Vec<T>, MathError> {
     let max_lag = match max_lag {
@@ -138,7 +170,7 @@ pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>
         match coef {
             Ok(coef) => {
                 // we now have a vector with i items, the last item is our partial correlation
-                y.push(std::convert::From::from(coef[i-1]));
+                y.push(From::from(coef[i-1]));
             },
             Err(_) => {
                 return Err(MathError);

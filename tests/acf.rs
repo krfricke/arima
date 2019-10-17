@@ -127,6 +127,17 @@ mod test_acf {
     }
 
     #[test]
+    fn ar_var_order_f64() {
+        const ORDER: usize = 3;
+        let x = AR3;
+
+        let var_real = 1691.7126551005;
+        let var_calc = arima::acf::var(&x, Some(ORDER as u32)).unwrap();
+
+        assert_lt!((var_real - var_calc).abs(), 1.0e-7);
+    }
+
+    #[test]
     fn pacf_full_f64() {
 
         let x = AR3;
