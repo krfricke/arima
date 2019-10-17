@@ -17,11 +17,11 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     covariance: bool
 ) -> Result<Vec<T>, MathError> {
     let max_lag = match max_lag {
-        // max lag should be inclusive, so add 1
-        // x.len is longer than maximum possible lag, so substract 1
-        Some(max_lag) => cmp::min(max_lag as usize + 1, x.len() - 1),
+        // if upper bound for max_lag is n-1
+        Some(max_lag) => cmp::min(max_lag as usize, x.len() - 1),
         None => x.len() - 1
     };
+    let m = max_lag + 1;
 
     let len_x_usize = x.len();
     let len_x: T = std::convert::From::from(len_x_usize as u32);
@@ -31,9 +31,9 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     let mean_x: T = sum_x / len_x;
 
     //let mut y: Vec<T> = Vec::with_capacity(max_lag);
-    let mut y: Vec<T> = vec![std::convert::From::from(0.0); max_lag];
+    let mut y: Vec<T> = vec![std::convert::From::from(0.0); m];
 
-    for t in 0..max_lag {
+    for t in 0..m {
         for i in 0..len_x_usize-t {
             let xi = x[i] - mean_x;
             let xi_t = x[i+t] - mean_x;
