@@ -1,8 +1,8 @@
 extern crate num;
 
-use num::{Num, Float};
 use core::ops::{Neg, Sub};
-use std::fmt::Debug;
+use num::{Num, Float};
+
 
 pub fn lag<T: Num + Copy>(x: &Vec<T>, tau: u32) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();

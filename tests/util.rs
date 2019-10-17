@@ -37,6 +37,4 @@ mod test_util {
             assert_lt!((x_diff[i] - y[i] as f64).abs(), 1.0e-7);
         }
     }
-
-
 }
