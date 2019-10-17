@@ -2,14 +2,20 @@ use crate::util;
 
 use num::Float;
 use std::cmp;
+use std::fmt::Debug;
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Div};
 
-pub fn acf_cov<T: Float + From<u32> + From<f64> + Copy + Sum + Add + AddAssign + Div>(x: &Vec<T>, max_lag: Option<u32>) -> Vec<T> {
+pub fn acf<T: Float + From<u32> + From<f64> + Copy + Sum + Add + AddAssign + Div + Debug>(
+    x: &Vec<T>,
+    max_lag: Option<u32>,
+    covariance: bool
+) -> Vec<T> {
     let max_lag = match max_lag {
         // max lag should be inclusive, so add 1
-        Some(max_lag) => cmp::min(max_lag+1, x.len() as u32) as usize,
-        None => x.len() as usize
+        // x.len is longer than maximum possible lag, so substract 1
+        Some(max_lag) => cmp::min(max_lag as usize + 1, x.len() - 1),
+        None => x.len() - 1
     };
 
     let len_x_usize = x.len();
@@ -28,6 +34,13 @@ pub fn acf_cov<T: Float + From<u32> + From<f64> + Copy + Sum + Add + AddAssign +
             let xi_t = x[i+t] - mean_x;
             y[t] = y[t] + (xi * xi_t) / len_x;
         }
+        // we need y[0] to calculate the correlations, so we set it to 1.0 at the end
+        if !covariance && t > 0 {
+            y[t] = y[t] / y[0];
+        }
+    }
+    if !covariance {
+        y[0] = std::convert::From::from(1.0);
     }
     y
 }
