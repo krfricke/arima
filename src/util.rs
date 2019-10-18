@@ -2,9 +2,10 @@ extern crate num;
 
 use core::ops::{Neg, Sub};
 use num::{Num, Float};
+use std::ops::{Add, AddAssign};
 
 
-pub fn lag<T: Num + Copy>(x: &Vec<T>, tau: u32) -> Vec<T> {
+pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
     assert!(tau < x.len() as u32);
     for i in tau as usize..x.len() {
@@ -31,7 +32,7 @@ pub fn lag<T: Num + Copy>(x: &Vec<T>, tau: u32) -> Vec<T> {
 /// util::diff(&x);
 /// // returns equivalent to vec![1, 1];
 /// ```
-pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &Vec<T>) -> Vec<T> {
+pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T]) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
     for i in 1..x.len() {
         y.push(x[i] - x[i-1]);
@@ -39,7 +40,7 @@ pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &Vec<T>) -> Vec<T> {
     y
 }
 
-pub fn diff_log<T: Float>(x: &Vec<T>) -> Vec<T> {
+pub fn diff_log<T: Float>(x: &[T]) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
     for i in 1..x.len() {
         y.push(x[i].ln() - x[i-1].ln());
@@ -47,3 +48,33 @@ pub fn diff_log<T: Float>(x: &Vec<T>) -> Vec<T> {
     y
 }
 
+pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
+    let mut y: Vec<T> = Vec::new();
+    if x.len() < 2 {
+        y.push(From::from(0));
+        return y;
+    }
+    y.push(x[0].clone());
+    for i in 1..x.len() {
+        y.push(y[i-1] + x[i]);
+    }
+    y
+}
+
+pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], differences: u32) -> Vec<T> {
+    let mut y: Vec<T> = Vec::new();
+    let zero = From::from(0);
+
+    // build cumulative sum n times where n is the order of differences
+    let mut cum: Vec<T> = From::from(x);
+    for i in 0..differences {
+        y.push(zero);
+        cum = cumsum(&cum);
+    }
+
+    // append the cumsum to the result vector
+    for i in 0..cum.len() {
+        y.push(cum[i]);
+    }
+    y
+}
