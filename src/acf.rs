@@ -8,16 +8,13 @@ use std::convert::From;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
 
-
-
-#[derive(Debug, Clone)]
-pub struct MathError;
+use crate::ArimaError;
 
 pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
     max_lag: Option<u32>,
     covariance: bool
-) -> Result<Vec<T>, MathError> {
+) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
         Some(max_lag) => cmp::min(max_lag as usize, x.len() - 1),
@@ -55,7 +52,7 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 pub fn ar_coef<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
     order: Option<u32>
-) -> Result<Vec<T>, MathError> {
+) -> Result<Vec<T>, ArimaError> {
     let max_lag = match order {
         Some(order) => Some(order + 1),
         None => None
@@ -67,7 +64,7 @@ pub fn ar_coef<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 pub fn ar_coef_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
     order: Option<u32>
-) -> Result<Vec<T>, MathError> {
+) -> Result<Vec<T>, ArimaError> {
     // phi_0 will be calculated separately
     let n = match order {
         Some(order) => cmp::min(order as usize, rho.len() - 1),
@@ -101,7 +98,7 @@ pub fn ar_coef_rho<T: Float + From<f64> + Into<f64> + Copy>(
     }
 
     if info != 0 {
-        return Err(MathError);
+        return Err(ArimaError);
     }
 
     // convert back to T
@@ -115,7 +112,7 @@ pub fn ar_coef_rho<T: Float + From<f64> + Into<f64> + Copy>(
 pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
     order: Option<u32>
-) -> Result<T, MathError> {
+) -> Result<T, ArimaError> {
     let max_lag = match order {
         Some(order) => Some(order + 1),
         None => None
@@ -131,7 +128,7 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
     phi: &[T],
     rho: &[T],
     cov0: T
-) -> Result<T, MathError> {
+) -> Result<T, ArimaError> {
     assert!(rho.len() > phi.len());
 
     let mut sum: T = From::from(0.0);
@@ -145,7 +142,7 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
 pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
     max_lag: Option<u32>
-) -> Result<Vec<T>, MathError> {
+) -> Result<Vec<T>, ArimaError> {
     // get autocorrelations
     let rho = acf(&x, max_lag, false).unwrap();
     pacf_rho(&rho, max_lag)
@@ -154,7 +151,7 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     rho: &[T],
     max_lag: Option<u32>
-) -> Result<Vec<T>, MathError> {
+) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
         // max lag should be inclusive, so add 1
         Some(max_lag) => cmp::min(max_lag as usize + 1, rho.len()),
@@ -173,7 +170,7 @@ pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>
                 y.push(From::from(coef[i-1]));
             },
             Err(_) => {
-                return Err(MathError);
+                return Err(ArimaError);
             }
         }
     }
