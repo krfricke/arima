@@ -1,5 +1,3 @@
-extern crate num;
-
 use core::ops::{Neg, Sub};
 use num::{Num, Float};
 use std::ops::{Add, AddAssign};

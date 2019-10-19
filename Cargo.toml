@@ -13,17 +13,15 @@ exclude = [
     ".idea/",
 ]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [badges]
 travis-ci = { repository = "krfricke/arima", branch = "master" }
 
 [features]
-default = ["openblas"]
+default = ["openblas", "openblas-src/system"]
+openblas = ["openblas-src"]
 accelerate = ["accelerate-src"]
 intel-mkl = ["intel-mkl-src"]
 netlib = ["netlib-src"]
-openblas = ["openblas-src"]
 
 [dependencies]
 lapack = "0.16.0"
