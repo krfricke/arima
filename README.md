@@ -5,7 +5,7 @@
 
 Rust crate for ARIMA model coefficient estimation and simulation.
 
-Please note that this crate relies on [https://crates.io/crates/lapack](LAPACK) which needs `gfortran` to compile.
+Please note that this crate relies on [LAPACK](https://crates.io/crates/lapack) which needs `gfortran` to compile.
 
 ## Example
 
@@ -56,4 +56,4 @@ fn main() {
 
 # License
 
-This crate is licensed under the [LICENSE](Apache-2.0) license.
+This crate is licensed under the [Apache-2.0](LICENSE) license.
