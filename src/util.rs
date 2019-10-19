@@ -20,8 +20,7 @@ use std::ops::{Add, AddAssign};
 /// ```
 /// use arima::util;
 /// let x = [-4, -9, 20, 23, -18, 6];
-/// let y = [20, 23, -18, 6];
-/// assert_eq!(util::lag(&x, 2), y);
+/// assert_eq!(util::lag(&x, 2), &[20, 23, -18, 6]);
 /// ```
 pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
@@ -48,15 +47,14 @@ pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
 /// ```
 /// use arima::util;
 /// let x = [1, 2, 3];
-/// util::diff(&x, 1);
-/// assert_eq!(x, [1, 1])
+/// assert_eq!(util::diff(&x, 1), &[1, 1])
 /// ```
 pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: u32) -> Vec<T> {
     let d = d as usize;
     let mut y: Vec<T> = x.to_vec().clone();
     let mut z = y.clone();
     for s in 0..d {
-        for i in d..x.len() {
+        for i in s+1..x.len() {
             z[i] = y[i] - y[i - 1];
         }
         y = z.clone();
@@ -78,9 +76,10 @@ pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: u32) -> Vec<T> {
 ///
 /// ```
 /// use arima::util;
-/// let x = [1, 4, 6];
-/// util::diff_log(&x);
-/// assert_eq!(x, [1.3862944, 0.4054651]);
+/// let x = [1.0, 4.0, 6.0];
+/// let y = util::diff_log(&x);
+/// assert!(y[0] - 1.3862944 < 1.0e-7);
+/// assert!(y[1] - 0.4054651 < 1.0e-7);
 /// ```
 pub fn diff_log<T: Float>(x: &[T]) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
@@ -105,8 +104,7 @@ pub fn diff_log<T: Float>(x: &[T]) -> Vec<T> {
 /// ```
 /// use arima::util;
 /// let x = [1, 2, 3];
-/// util::cumsum(&x);
-/// assert_eq!(x, [1, 3, 6]);
+/// assert_eq!(util::cumsum(&x), &[1, 3, 6]);
 /// ```
 pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
@@ -138,10 +136,10 @@ pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
 /// use arima::util;
 /// let x = [1, 1, 1, 1, 1];
 /// let y = util::diffinv(&x, 1);
-/// assert_eq!(y, [1, 2, 3, 4, 5]);
+/// assert_eq!(y, &[0, 1, 2, 3, 4, 5]);
 ///
 /// let z = util::diff(&y, 1);
-/// assert_eq!(x, y);
+/// assert_eq!(z, x);
 /// ```
 pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: u32) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();

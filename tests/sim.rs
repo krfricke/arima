@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod test_sim {
-    use more_asserts::assert_lt;
-
     extern crate rand;
     use rand::prelude::*;
     use rand::distributions::{Normal, Distribution};
