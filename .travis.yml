@@ -1,16 +1,21 @@
 language: rust
 
-sudo: required
+os:
+  - linux
+
 addons:
   apt:
     packages:
       - gfortran
-      - libgfortran-7-dev
+
 rust:
   - stable
   - beta
   - nightly
-  -
+
 matrix:
   allow_failures:
     - rust: nightly
+
+script:
+  - cargo test -vv

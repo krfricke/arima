@@ -1,6 +1,11 @@
+![crates.io](https://img.shields.io/crates/v/arima.svg)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/krfricke/arima/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/krfricke/arima.svg?branch=master)](https://travis-ci.org/krfricke/arima)
 # ARIMA
 
 Rust crate for ARIMA model coefficient estimation and simulation.
+
+Please note that this crate relies on [https://crates.io/crates/lapack](LAPACK) which needs `gfortran` to compile.
 
 ## Example
 
@@ -22,10 +27,10 @@ fn main() {
     let ts = sim::arima_sim(
         1000,                   // number of samples
         Some(&[0.7, 0.2]),      // AR parameters
-        None,     // MA parameters
+        None,                   // MA parameters
         0,                      // difference parameter
         &|mut rng| { normal.sample(&mut rng) }, // noise fn
-        &mut rng                    // RNG
+        &mut rng                // RNG
     ).unwrap();
 
     // estimate AR parameters

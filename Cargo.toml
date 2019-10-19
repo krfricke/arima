@@ -1,12 +1,19 @@
 [package]
 name = "arima"
+description = "ARIMA time series modeling for Rust."
 version = "0.1.0"
 authors = ["Kai Fricke <coding@kaifricke.com>"]
 edition = "2018"
 license = "Apache-2.0"
 license-file = "LICENSE"
+homepage = "https://github.com/krfricke/arima"
+repository = "https://github.com/krfricke/arima"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[badges]
+travis-ci = { repository = "krfricke/arima", branch = "master" }
 
 [dependencies]
 lapack = "0.16.0"
