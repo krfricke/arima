@@ -1,4 +1,5 @@
-extern crate lapack_src;
+extern crate openblas_src;
+extern crate lapack_sys;
 extern crate lapack;
 
 use num::Float;
