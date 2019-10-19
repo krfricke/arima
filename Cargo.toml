@@ -4,7 +4,6 @@ description = "ARIMA time series modeling for Rust."
 version = "0.1.0"
 authors = ["Kai Fricke <coding@kaifricke.com>"]
 edition = "2018"
-license = "Apache-2.0"
 license-file = "LICENSE"
 homepage = "https://github.com/krfricke/arima"
 repository = "https://github.com/krfricke/arima"
