@@ -7,6 +7,8 @@ addons:
   apt:
     packages:
       - gfortran
+      - libopenblas-base
+      - libopenblas-dev
 
 rust:
   - stable

@@ -21,6 +21,7 @@ travis-ci = { repository = "krfricke/arima", branch = "master" }
 [dependencies]
 lapack = "0.16.0"
 lapack-src = { version = "0.4", features = ["openblas"] }
+openblas-src = { version = "0.7.0", features = ["static"]}
 more-asserts = "0.2.1"
 num = "0.2.0"
 rand = "0.6.5"
