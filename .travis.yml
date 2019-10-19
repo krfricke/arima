@@ -20,4 +20,4 @@ matrix:
     - rust: nightly
 
 script:
-  - cargo test -vv
+  - cargo test -vv --features openblas-src/system
