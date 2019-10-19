@@ -13,16 +13,18 @@ mod test_util {
     fn diff_i32() {
         let x = [-4, -9, 20, 23, -18, 6];
         let y = [-5, 29, 3, -41, 24];
-        assert_eq!(arima::util::diff(&x), y);
+        assert_eq!(arima::util::diff(&x, 1), y);
     }
 
     #[test]
     fn diff_f64() {
         let x = [4.1341055, 4.5212322, -9.1234667, -1.3249472, -8.9102578, -7.5955399, -1.8054393,  8.6400979,  0.7207072,  6.6751565];
         let y = [0.3871267, -13.6446989, 7.7985195, -7.5853106, 1.3147179,  5.7901006, 10.4455372, -7.9193907,  5.9544493];
-        let x_diff = arima::util::diff(&x);
+        let x_diff = arima::util::diff(&x, 1);
 
         assert_eq!(x_diff.len(), y.len());
+
+        println!("{:?}", x_diff);
 
         for i in 0..y.len() {
             assert_lt!((x_diff[i] - y[i] as f64).abs(), 1.0e-7);
@@ -73,6 +75,11 @@ mod test_util {
         let x_diffinv = arima::util::diffinv(&x, 1);
 
         assert_eq!(x_diffinv, y);
+
+        // check backwards
+        let z = arima::util::diff(&x_diffinv, 1);
+
+        assert_eq!(z, x);
     }
 
     #[test]
@@ -95,6 +102,13 @@ mod test_util {
 
         for i in 0..y.len() {
             assert_lt!((x_diffinv[i] - y[i] as f64).abs(), 1.0e-7);
+        }
+
+        // check backwards
+        let z = arima::util::diff(&x_diffinv, 1);
+
+        for i in 0..z.len() {
+            assert_lt!((z[i] - x[i] as f64).abs(), 1.0e-7);
         }
     }
 
