@@ -1,8 +1,14 @@
 language: rust
+
+sudo: required
+before_install:
+  - sudo apt-get install gfortran
+  -
 rust:
   - stable
   - beta
   - nightly
+  -
 matrix:
   allow_failures:
     - rust: nightly
