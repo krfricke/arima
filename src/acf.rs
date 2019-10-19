@@ -86,9 +86,9 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 /// ```
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
-/// acf::ar_coef(&x, Some(2));
+/// acf::ar(&x, Some(2));
 /// ```
-pub fn ar_coef<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
+pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
     order: Option<u32>
 ) -> Result<Vec<T>, ArimaError> {
@@ -97,7 +97,7 @@ pub fn ar_coef<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
         None => None
     };
     let rho = acf(&x, max_lag, false).unwrap();
-    ar_coef_rho(&rho, order)
+    ar_rho(&rho, order)
 }
 
 /// Calculate the auto-regressive coefficients of a time series of length n, given
@@ -118,9 +118,9 @@ pub fn ar_coef<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, None, false).unwrap();
-/// acf::ar_coef_rho(&rho, Some(2));
+/// acf::ar_rho(&rho, Some(2));
 /// ```
-pub fn ar_coef_rho<T: Float + From<f64> + Into<f64> + Copy>(
+pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
     order: Option<u32>
 ) -> Result<Vec<T>, ArimaError> {
@@ -198,7 +198,7 @@ pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         None => None
     };
     let rho = acf(&x, max_lag, false).unwrap();
-    let phi = ar_coef_rho(&rho, order).unwrap();
+    let phi = ar_rho(&rho, order).unwrap();
     let cov0 = acf(&x, Some(0), true).unwrap()[0].clone();
 
     var_phi_rho_cov(&phi, &rho, cov0)
@@ -222,7 +222,7 @@ pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, Some(3), false).unwrap();
-/// let phi = acf::ar_coef_rho(&rho, Some(2)).unwrap();
+/// let phi = acf::ar_rho(&rho, Some(2)).unwrap();
 /// let cov0 = acf::acf(&x, Some(0), true).unwrap()[0].clone();
 /// acf::var_phi_rho_cov(&phi, &rho, cov0);
 /// ```
@@ -306,7 +306,7 @@ pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>
 
     // calculate AR coefficients for each solution of order 1..max_lag
     for i in 1..m {
-        let coef = ar_coef_rho(&rho, Some(i as u32));
+        let coef = ar_rho(&rho, Some(i as u32));
         match coef {
             Ok(coef) => {
                 // we now have a vector with i items, the last item is our partial correlation

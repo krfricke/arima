@@ -100,7 +100,7 @@ mod test_acf {
             0.1671995584, -0.015627203, -0.0510423127, -0.2160332708, 0.1816141455,
             -0.332740582, 0.1666038874, -0.1123501484, -0.1005977032
         ];
-        let ar_calc = arima::acf::ar_coef_rho(&acf_calc, None).unwrap();
+        let ar_calc = arima::acf::ar_rho(&acf_calc, None).unwrap();
 
         assert_eq!(ar_real.len(), ar_calc.len());
 
@@ -117,7 +117,7 @@ mod test_acf {
         let acf_calc = arima::acf::acf(&x, None, false).unwrap();
 
         let ar_real = [0.4499776844, -0.249432051, 0.0135795645];
-        let ar_calc = arima::acf::ar_coef_rho(&acf_calc, Some(ORDER as u32)).unwrap();
+        let ar_calc = arima::acf::ar_rho(&acf_calc, Some(ORDER as u32)).unwrap();
 
         assert_eq!(ar_real.len(), ar_calc.len());
 
