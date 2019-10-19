@@ -5,7 +5,10 @@
 
 Rust crate for ARIMA model coefficient estimation and simulation.
 
-Please note that this crate relies on [LAPACK](https://crates.io/crates/lapack) which needs `gfortran` to compile.
+Please note that this crate relies on [LAPACK](https://crates.io/crates/lapack) which needs a working
+[BLAS](https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms) implementation. Per default, this
+crate looks for a system-installed OpenBLAS. On Debian and Ubuntu, you can install this via
+`apt install libopenblas-base libopenblas-dev`.
 
 ## Example
 

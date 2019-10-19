@@ -5,6 +5,7 @@ version = "0.1.0"
 authors = ["Kai Fricke <coding@kaifricke.com>"]
 edition = "2018"
 license-file = "LICENSE"
+readme = "README.md"
 homepage = "https://github.com/krfricke/arima"
 repository = "https://github.com/krfricke/arima"
 
