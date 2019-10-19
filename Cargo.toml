@@ -9,6 +9,9 @@ license-file = "LICENSE"
 homepage = "https://github.com/krfricke/arima"
 repository = "https://github.com/krfricke/arima"
 
+exclude = [
+    ".idea/",
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
