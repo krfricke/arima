@@ -1,8 +1,11 @@
 language: rust
 
 sudo: required
-before_install:
-  - sudo apt-get install gfortran libgfortran libgfortran-dev
+addons:
+  apt:
+    packages:
+      - gfortran
+      - libgfortran-7-dev
 rust:
   - stable
   - beta
