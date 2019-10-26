@@ -98,7 +98,7 @@ pub fn arima_sim<T: Rng>(
         // also remove last d elements as there will be d zeros at the start
         x = util::diffinv(&x[burn_in..x.len()-d as usize], d);
     } else {
-        x = Vec::from(&x[burn_in..]);
+        x.drain(0..burn_in);
     }
 
     Ok(x)
