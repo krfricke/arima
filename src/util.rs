@@ -49,15 +49,16 @@ pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
 /// ```
 pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: u32) -> Vec<T> {
     let d = d as usize;
-    let mut y: Vec<T> = x.to_vec().clone();
-    let mut z = y.clone();
+    let mut y: Vec<T> = x.to_vec();
+    let len = y.len();
     for s in 0..d {
-        for i in s+1..x.len() {
-            z[i] = y[i] - y[i - 1];
+        for i in 1..len-s {
+            // we iterate backwards through the vector to avoid cloning
+            y[len-i] = y[len-i] - y[len-i-1];
         }
-        y = z.clone();
     }
-    y[d..].to_vec()
+    y.drain(0..d);
+    y
 }
 
 /// Returns a n-1 vector containing the pairwise difference of log(x_t) - log(x_t-1).
@@ -80,10 +81,16 @@ pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: u32) -> Vec<T> {
 /// assert!(y[1] - 0.4054651 < 1.0e-7);
 /// ```
 pub fn diff_log<T: Float>(x: &[T]) -> Vec<T> {
-    let mut y: Vec<T> = Vec::new();
-    for i in 1..x.len() {
-        y.push(x[i].ln() - x[i-1].ln());
+    let mut y: Vec<T> = x.to_vec();
+    let len = y.len();
+
+    y[len-1] = y[len-1].ln();
+    for i in 1..len {
+        // we iterate backwards through the vector to avoid re-calculation of ln()
+        y[len-i-1] = y[len-i-1].ln();
+        y[len-i] = y[len-i] - y[len-i-1];
     }
+    y.drain(0..1);
     y
 }
 
@@ -110,7 +117,7 @@ pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
         y.push(From::from(0));
         return y;
     }
-    y.push(x[0].clone());
+    y.push(x[0]);
     for i in 1..x.len() {
         y.push(y[i-1] + x[i]);
     }
@@ -140,19 +147,15 @@ pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
 /// assert_eq!(z, x);
 /// ```
 pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: u32) -> Vec<T> {
-    let mut y: Vec<T> = Vec::new();
+    let d = d as usize;
     let zero = From::from(0);
 
-    // build cumulative sum n times where n is the order of differences
-    let mut cum: Vec<T> = From::from(x);
+    // x vector with d leading zeros
+    let mut cum: Vec<T> = [&vec![zero; d], x].concat().to_vec();
+
+    // build cumulative sum d times
     for _ in 0..d {
-        y.push(zero);
         cum = cumsum(&cum);
     }
-
-    // append the cumsum to the result vector
-    for i in 0..cum.len() {
-        y.push(cum[i]);
-    }
-    y
+    cum
 }
