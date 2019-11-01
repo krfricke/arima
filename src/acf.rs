@@ -2,6 +2,7 @@ use num::Float;
 
 use std::cmp;
 use std::convert::From;
+use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
 
@@ -24,7 +25,10 @@ use crate::ArimaError;
 /// ```
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
-/// acf::acf(&x, Some(2), false);
+/// let ac = acf::acf(&x, Some(2), false).unwrap();
+/// assert!((ac[0] - 1.0).abs() < 1.0e-7);
+/// assert!((ac[1] - 0.25).abs() < 1.0e-7);
+/// assert!((ac[2] - (-0.3)).abs() < 1.0e-7);
 /// ```
 pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
@@ -83,7 +87,9 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 /// ```
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
-/// acf::ar(&x, Some(2));
+/// let ar = acf::ar(&x, Some(2)).unwrap();
+/// assert!((ar[0] - 0.3466667).abs() < 1.0e-7);
+/// assert!((ar[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
 pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
@@ -115,7 +121,9 @@ pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, None, false).unwrap();
-/// acf::ar_rho(&rho, Some(2));
+/// let ar = acf::ar_rho(&rho, Some(2)).unwrap();
+/// assert!((ar[0] - 0.3466667).abs() < 1.0e-7);
+/// assert!((ar[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
 pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
@@ -163,6 +171,86 @@ pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
         phi[i] = std::convert::Into::into(b[i]);
     }
     Ok(phi)
+}
+
+/// Calculate the auto-regressive coefficients of a time series of length n, given
+/// the auto-correlation coefficients rho and auto covariance at lag 0, cov0.
+/// This method uses the Durbin-Levinson algorithm to iteratively estimate the coefficients,
+/// and it also returns the standard error for the 1-step look-ahead prediction.
+///
+/// # Arguments
+///
+/// * `&rho` - Reference to auto-correlation coefficients rho.
+/// * `cov0` - Autocovariance at lag 0.
+/// * `order` - Order of the AR model.
+///
+/// # Returns
+///
+/// * Output vector of length order containing the AR coefficients.
+///
+/// # Example
+///
+/// ```
+/// use arima::acf;
+/// let x = [1.0, 1.2, 1.4, 1.6];
+/// let rho = acf::acf(&x, None, false).unwrap();
+/// let cov0 = acf::acf(&x, Some(0), true).unwrap()[0];
+/// let (ar, err) = acf::ar_dl_rho_cov(&rho, cov0, Some(2)).unwrap();
+/// assert!((ar[0] - 0.3466667).abs() < 1.0e-7);
+/// assert!((ar[1] - -0.3866667).abs() < 1.0e-7);
+/// ```
+pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div + Debug>(
+    rho: &[T],
+    cov0: T,
+    order: Option<u32>
+) -> Result<(Vec<T>, T), ArimaError> {
+    let order = match order {
+        Some(order) => cmp::min(order as usize, rho.len() - 1),
+        None => rho.len() - 1
+    };
+
+    // we need zero values more than once, so we'll use this helper var
+    let zero = From::from(0.0);
+    let one = From::from(1.0);
+
+    // these vectors will hold the parameter values
+    let mut phi: Vec<Vec<T>> = vec![Vec::new(); order+1];
+    let mut err: Vec<T> = Vec::new();
+
+    // initialize zero-order estimates
+    phi[0].push(zero);
+    err.push(cov0);
+
+    for i in 1..order+1 {
+        // first allocate values for the phi vector so we can use phi[i][i-1]
+        for _ in 0..i {
+            phi[i].push(zero);
+        }
+
+        // estimate phi_ii, which is stored as phi[i][i-1]
+        // phi_i,i = rho(i) - sum_{k=1}^{n-1}(phi_{n-1,k} * rho(n-k) /
+        //  (1 - sum_{k=1}^{n-1}(phi_{n-1,k} * rho(k))
+
+        let mut num_sum = zero;  // numerator sum
+        let mut den_sum = one;       // denominator sum
+
+        for k in 1..i {
+            let p = phi[i-1][k-1];
+            num_sum += p * rho[i-k];
+            den_sum += -p * rho[k];
+        }
+
+        let phi_ii = (rho[i] - num_sum) / den_sum;
+        phi[i][i-1] = phi_ii;
+
+        err.push(err[i-1] * (one - phi_ii*phi_ii));
+
+        for k in 1..i {
+            phi[i][k - 1] = phi[i - 1][k - 1] - phi[i][i - 1] * phi[i - 1][i - k - 1];
+        }
+    }
+
+    Ok((phi[order].clone(), err[order].clone()))
 }
 
 
@@ -256,7 +344,9 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
 /// ```
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
-/// acf::pacf(&x, Some(2));
+/// let pr = acf::pacf(&x, Some(2)).unwrap();
+/// assert!((pr[0] - 0.25).abs() < 1.0e-7);
+/// assert!((pr[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
 pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
@@ -285,7 +375,9 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, None, false).unwrap();
-/// acf::pacf_rho(&rho, Some(2));
+/// let pr = acf::pacf_rho(&rho, Some(2)).unwrap();
+/// assert!((pr[0] - 0.25).abs() < 1.0e-7);
+/// assert!((pr[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
 pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     rho: &[T],
