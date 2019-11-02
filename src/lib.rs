@@ -2,6 +2,8 @@ pub mod acf;
 pub mod sim;
 pub mod util;
 
+pub mod estimate;
+
 #[derive(Debug, Clone)]
 pub struct ArimaError;
 

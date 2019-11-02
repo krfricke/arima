@@ -71,7 +71,7 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 
 /// Calculate the auto-regressive coefficients of a time series of length n.
 /// If you already calculated the auto-correlation coefficients (ACF), consider
-/// using `ar_coef` instead.
+/// using `ar_rho` instead.
 ///
 /// # Arguments
 ///
@@ -176,7 +176,8 @@ pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
 /// Calculate the auto-regressive coefficients of a time series of length n, given
 /// the auto-correlation coefficients rho and auto covariance at lag 0, cov0.
 /// This method uses the Durbin-Levinson algorithm to iteratively estimate the coefficients,
-/// and it also returns the standard error for the 1-step look-ahead prediction.
+/// and it also returns the standard error for the 1-step look-ahead prediction (i.e. the
+/// estimated variance).
 ///
 /// # Arguments
 ///
@@ -215,11 +216,11 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
 
     // these vectors will hold the parameter values
     let mut phi: Vec<Vec<T>> = vec![Vec::new(); order+1];
-    let mut err: Vec<T> = Vec::new();
+    let mut var: Vec<T> = Vec::new();
 
     // initialize zero-order estimates
     phi[0].push(zero);
-    err.push(cov0);
+    var.push(cov0);
 
     for i in 1..order+1 {
         // first allocate values for the phi vector so we can use phi[i][i-1]
@@ -243,14 +244,14 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
         let phi_ii = (rho[i] - num_sum) / den_sum;
         phi[i][i-1] = phi_ii;
 
-        err.push(err[i-1] * (one - phi_ii*phi_ii));
+        var.push(var[i-1] * (one - phi_ii*phi_ii));
 
         for k in 1..i {
             phi[i][k - 1] = phi[i - 1][k - 1] - phi[i][i - 1] * phi[i - 1][i - k - 1];
         }
     }
 
-    Ok((phi[order].clone(), err[order].clone()))
+    Ok((phi[order].clone(), var[order].clone()))
 }
 
 

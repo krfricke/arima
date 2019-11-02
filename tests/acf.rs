@@ -140,11 +140,11 @@ mod test_acf {
             0.1671995584, -0.015627203, -0.0510423127, -0.2160332708, 0.1816141455,
             -0.332740582, 0.1666038874, -0.1123501484, -0.1005977032
         ];
-        let (ar_calc, err) = arima::acf::ar_dl_rho_cov(&acf_calc, cov0, None).unwrap();
+        let (ar_calc, var) = arima::acf::ar_dl_rho_cov(&acf_calc, cov0, None).unwrap();
 
         assert_eq!(ar_real.len(), ar_calc.len());
 
-        assert_lt!(err - 1691.7126551, 1.0e-7);
+        assert_lt!(var - 1691.7126551, 1.0e-7);
 
         for i in 0..ar_real.len() {
             assert_lt!((ar_real[i] - ar_calc[i] as f64).abs(), 1.0e-7);
@@ -161,11 +161,11 @@ mod test_acf {
         let cov0 = acv_calc[0];
 
         let ar_real = [0.4499776844, -0.249432051, 0.0135795645];
-        let (ar_calc, err) = arima::acf::ar_dl_rho_cov(&acf_calc, cov0, Some(ORDER as u32)).unwrap();
+        let (ar_calc, var) = arima::acf::ar_dl_rho_cov(&acf_calc, cov0, Some(ORDER as u32)).unwrap();
 
         assert_eq!(ar_real.len(), ar_calc.len());
 
-        assert_lt!(err - 1691.7126551, 1.0e-7);
+        assert_lt!(var - 1691.7126551, 1.0e-7);
 
         for i in 0..ar_real.len() {
             assert_lt!((ar_real[i] - ar_calc[i] as f64).abs(), 1.0e-7);
@@ -216,5 +216,19 @@ mod test_acf {
         for i in 0..pacf_real.len() {
             assert_lt!((pacf_real[i] - pacf_calc[i] as f64).abs(), 1.0e-7);
         }
+    }
+
+    #[test]
+    fn onthego() {
+        let rho = [1.0, 0.849, 0.519];
+        let phi = arima::acf::ar_rho(&rho, Some(2)).unwrap();
+
+        let var = arima::acf::var_phi_rho_cov(
+            &phi,
+            &rho,
+            8.903
+        ).unwrap();
+
+        assert!((var - 1.187).abs() < 1.0e-3);
     }
 }

@@ -159,3 +159,53 @@ pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: u32) -> V
     }
     cum
 }
+
+/// Calculate the mean of a vector.
+///
+/// # Arguments
+///
+/// * `&x` - Vector of length n to calculate the mean for.
+///
+/// # Returns
+///
+/// * Output vector containing the mean sum(x)/.
+///
+/// # Example
+///
+/// ```
+/// use arima::util;
+/// let x = [2, 3, 4, 5, 6];
+/// let y = util::mean(&x);
+/// assert_eq!(y, 4);
+/// ```
+pub fn mean<T: Num + Copy + Add<T, Output=T> + From<i32>>(x: &[T]) -> T {
+    let zero: T = From::from(0 as i32);
+    let n: T = From::from(x.len() as i32);
+    x.iter().fold(zero, |sum, &item| sum + item) / n
+}
+
+/// Center vector, i.e. remove the mean from each element. Returns a tuple containing the
+/// centered vector and the mean.
+///
+/// # Arguments
+///
+/// * `&x` - Vector of length n to be centered.
+///
+/// # Returns
+///
+/// * Tuple of (y, mean) where y is the centered vector and mean is the mean.
+///
+/// # Example
+///
+/// ```
+/// use arima::util;
+/// let x = [2, 3, 4, 5, 6];
+/// let (y, m) = util::center(&x);
+/// assert_eq!(y, [-2, -1, 0, 1, 2]);
+/// assert_eq!(m, 4);
+/// ```
+pub fn center<T: Num + Copy + Add + AddAssign + Copy + From<i32>>(x: &[T])
+                                                                              -> (Vec<T>, T) {
+    let m = mean(x);
+    (x.iter().map(|&x| { x - m }).collect(), m)
+}
