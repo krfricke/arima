@@ -6,11 +6,6 @@
 
 Rust crate for ARIMA model coefficient estimation and simulation.
 
-Please note that this crate relies on [LAPACK](https://crates.io/crates/lapack) which needs a working
-[BLAS](https://en.wikipedia.org/wiki/Basic_Linear_Algebra_Subprograms) implementation. Per default, this
-crate looks for a system-installed OpenBLAS. On Debian and Ubuntu, you can install this via
-`apt install libopenblas-base libopenblas-dev`.
-
 ## Example
 
 ```rust
@@ -18,7 +13,7 @@ extern crate rand;
 use rand::prelude::*;
 use rand::distributions::{Normal, Distribution};
 
-use arima::{acf, sim};
+use arima::{estimate, sim};
 
 fn main() {
     // initialize RNG with seed
@@ -31,22 +26,23 @@ fn main() {
     let ts = sim::arima_sim(
         1000,                   // number of samples
         Some(&[0.7, 0.2]),      // AR parameters
-        None,                   // MA parameters
+        Some(&[0.4]),                   // MA parameters
         0,                      // difference parameter
         &|mut rng| { normal.sample(&mut rng) }, // noise fn
         &mut rng                // RNG
     ).unwrap();
 
     // estimate AR parameters
-    let ar = acf::ar(&ts, Some(2)).unwrap();
+    let coef = estimate::fit(&ts, 2, 0, 1).unwrap();
 
-    println!("Estimated parameters: {:?}", ar);
-    // Estimated parameters: [0.7436892808499717, 0.14774749031248915]
+    println!("Estimated parameters: {:?}", coef);
+    // Estimated parameters: [14.904840907703845, 0.7524268545022731, 0.14075584488434256, 0.35966423499627603]
 }
 ```
 
 ## Features
 
+- Full ARIMA model parameter estimation
 - Auto-correlation/covariance calculation
 - Partial auto-correlation calculation
 - AR parameter estimation
@@ -55,7 +51,6 @@ fn main() {
 
 ## Roadmap
 
-- Full ARIMA model parameter estimation
 - Order estimation
 
 # License
