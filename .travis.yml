@@ -3,13 +3,6 @@ language: rust
 os:
   - linux
 
-addons:
-  apt:
-    packages:
-      - gfortran
-      - libopenblas-base
-      - libopenblas-dev
-
 rust:
   - stable
   - beta
@@ -20,4 +13,4 @@ matrix:
     - rust: nightly
 
 script:
-  - cargo test -vv --features openblas-src/system
+  - cargo test -vv
