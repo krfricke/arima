@@ -51,7 +51,7 @@ mod test_acf {
         const LAG: usize = 4;
         let x = AR3;
         let acf_real = &AR3_COV[0..LAG+1];
-        let acf_calc = arima::acf::acf(&x, Some(LAG as u32), true).unwrap();
+        let acf_calc = arima::acf::acf(&x, Some(LAG), true).unwrap();
 
         assert_eq!(acf_real.len(), acf_calc.len());
 
@@ -79,7 +79,7 @@ mod test_acf {
         let x = AR3;
         let acf_real = &AR3_COR[0..LAG+1];
 
-        let acf_calc = arima::acf::acf(&x, Some(LAG as u32), false).unwrap();
+        let acf_calc = arima::acf::acf(&x, Some(LAG), false).unwrap();
 
         assert_eq!(acf_real.len(), acf_calc.len());
 
@@ -117,7 +117,7 @@ mod test_acf {
         let acf_calc = arima::acf::acf(&x, None, false).unwrap();
 
         let ar_real = [0.4499776844, -0.249432051, 0.0135795645];
-        let ar_calc = arima::acf::ar_rho(&acf_calc, Some(ORDER as u32)).unwrap();
+        let ar_calc = arima::acf::ar_rho(&acf_calc, Some(ORDER)).unwrap();
 
         assert_eq!(ar_real.len(), ar_calc.len());
 
@@ -161,7 +161,7 @@ mod test_acf {
         let cov0 = acv_calc[0];
 
         let ar_real = [0.4499776844, -0.249432051, 0.0135795645];
-        let (ar_calc, var) = arima::acf::ar_dl_rho_cov(&acf_calc, cov0, Some(ORDER as u32)).unwrap();
+        let (ar_calc, var) = arima::acf::ar_dl_rho_cov(&acf_calc, cov0, Some(ORDER)).unwrap();
 
         assert_eq!(ar_real.len(), ar_calc.len());
 
@@ -178,7 +178,7 @@ mod test_acf {
         let x = AR3;
 
         let var_real = 1691.7126551005;
-        let var_calc = arima::acf::var(&x, Some(ORDER as u32)).unwrap();
+        let var_calc = arima::acf::var(&x, Some(ORDER)).unwrap();
 
         assert_lt!((var_real - var_calc).abs(), 1.0e-7);
     }
@@ -209,7 +209,7 @@ mod test_acf {
         let acf_calc = arima::acf::acf(&x, None, false).unwrap();
 
         let pacf_real = &AR3_PACF[0..LAG];
-        let pacf_calc = arima::acf::pacf_rho(&acf_calc, Some(LAG as u32)).unwrap();
+        let pacf_calc = arima::acf::pacf_rho(&acf_calc, Some(LAG)).unwrap();
 
         assert_eq!(pacf_real.len(), pacf_calc.len());
 

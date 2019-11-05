@@ -65,4 +65,52 @@ mod test_estimate {
             assert_lt!((residuals_real[i] - residuals[i] as f64).abs(), 1.0e-3);
         }
     }
+
+    #[test]
+    fn fit_arima_2002_f64() {
+        let x = AR3;
+
+        let coef = arima::estimate::fit(&x,2,0,0).unwrap();
+
+        // Results obtained from R with
+        // `cf <- arima(x, order=c(2, 0, 0), method="CSS", optim.method="L-BFGS-B")$coef`
+        // R's intercept must be transformed with `cf["intercept"] * (1 - sum(cf[1:2]))`
+        assert_lt!((coef[0] - 29.3546).abs(), 1.0e-4);   // Intercept
+        assert_lt!((coef[1] - 0.6465575).abs(), 1.0e-4);  // AR 1
+        assert_lt!((coef[2] - -0.3452993).abs(), 1.0e-4); // AR 2
+    }
+
+    #[test]
+    fn fit_arima_101_f64() {
+        let x = AR3;
+
+        let coef = arima::estimate::fit(&x,1,0,1).unwrap();
+
+        // Results obtained from R with
+        // `cf <- arima(x, order=c(1, 0, 1), method="CSS", optim.method="L-BFGS-B")$coef`
+        // R's intercept must be transformed with `cf["intercept"] * (1 - sum(cf[1]))`
+        assert_lt!((coef[0] - 24.18111).abs(), 1.0e-3);  // Intercept
+        assert_lt!((coef[1] - 0.3596548).abs(), 1.0e-4); // AR 1
+        assert_lt!((coef[2] - 0.2880067).abs(), 1.0e-4); // MA 1
+    }
+
+    #[test]
+    fn fit_arima_102_f64() {
+        let x = AR3;
+
+        let coef = arima::estimate::fit(&x,1,0,2).unwrap();
+        println!("{:?}", coef);
+
+        // Results obtained from R with
+        // `cf <- arima(x, order=c(1, 0, 2), method="CSS", optim.method="L-BFGS-B")$coef`
+        // R's intercept must be transformed with `cf["intercept"] * (1 - sum(cf[1]))`
+
+        // With MA > 1, we often find multiple similarly good models that mostly differ in
+        // the intercept. Thus, we ignore it in this test.
+        //assert_lt!((coef[0] - 1.884872).abs(), 1.0e-7);  // Intercept
+
+        assert_lt!((coef[1] - 0.4835826).abs(), 1.0e-2); // AR 1
+        assert_lt!((coef[2] - 1.0564438).abs(), 1.0e-2); // MA 1
+        assert_lt!((coef[3] - 1.5102864).abs(), 1.0e-2); // MA 2
+    }
 }

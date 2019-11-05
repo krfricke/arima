@@ -32,12 +32,12 @@ use crate::ArimaError;
 /// ```
 pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
-    max_lag: Option<u32>,
+    max_lag: Option<usize>,
     covariance: bool
 ) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
-        Some(max_lag) => cmp::min(max_lag as usize, x.len() - 1),
+        Some(max_lag) => cmp::min(max_lag, x.len() - 1),
         None => x.len() - 1
     };
     let m = max_lag + 1;
@@ -93,7 +93,7 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 /// ```
 pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
-    order: Option<u32>
+    order: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
     let max_lag = match order {
         Some(order) => Some(order + 1),
@@ -127,11 +127,11 @@ pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// ```
 pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
-    order: Option<u32>
+    order: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
     // phi_0 will be calculated separately
     let n = match order {
-        Some(order) => cmp::min(order as usize, rho.len() - 1),
+        Some(order) => cmp::min(order, rho.len() - 1),
         None => rho.len() - 1
     };
 
@@ -203,10 +203,10 @@ pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
 pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div + Debug>(
     rho: &[T],
     cov0: T,
-    order: Option<u32>
+    order: Option<usize>
 ) -> Result<(Vec<T>, T), ArimaError> {
     let order = match order {
-        Some(order) => cmp::min(order as usize, rho.len() - 1),
+        Some(order) => cmp::min(order, rho.len() - 1),
         None => rho.len() - 1
     };
 
@@ -277,7 +277,7 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
 /// ```
 pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
-    order: Option<u32>
+    order: Option<usize>
 ) -> Result<T, ArimaError> {
     let max_lag = match order {
         Some(order) => Some(order + 1),
@@ -351,7 +351,7 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
 /// ```
 pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
-    max_lag: Option<u32>
+    max_lag: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
     // get autocorrelations
     let rho = acf(&x, max_lag, false).unwrap();
@@ -382,11 +382,11 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// ```
 pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     rho: &[T],
-    max_lag: Option<u32>
+    max_lag: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
-        Some(max_lag) => cmp::min(max_lag as usize, rho.len() - 1),
+        Some(max_lag) => cmp::min(max_lag, rho.len() - 1),
         None => rho.len() - 1
     };
     let m = max_lag + 1;
@@ -396,7 +396,7 @@ pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>
 
     // calculate AR coefficients for each solution of order 1..max_lag
     for i in 1..m {
-        let coef = ar_rho(&rho, Some(i as u32));
+        let coef = ar_rho(&rho, Some(i));
         match coef {
             Ok(coef) => {
                 // we now have a vector with i items, the last item is our partial correlation

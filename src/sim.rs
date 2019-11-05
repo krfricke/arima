@@ -39,7 +39,7 @@ pub fn arima_sim<T: Rng>(
     n: usize,
     ar: Option<&[f64]>,
     ma: Option<&[f64]>,
-    d: u32,
+    d: usize,
     noise_fn: &dyn Fn(&mut T) -> f64,
     rng: &mut T
 ) -> Result<Vec<f64>, ArimaError> {
@@ -96,7 +96,7 @@ pub fn arima_sim<T: Rng>(
     // remove burn_in part from vector, calculate differences
     if d > 0 {
         // also remove last d elements as there will be d zeros at the start
-        x = util::diffinv(&x[burn_in..x.len()-d as usize], d);
+        x = util::diffinv(&x[burn_in..x.len()-d], d);
     } else {
         x.drain(0..burn_in);
     }

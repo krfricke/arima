@@ -47,8 +47,7 @@ pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
 /// let x = [1, 2, 3];
 /// assert_eq!(util::diff(&x, 1), &[1, 1])
 /// ```
-pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: u32) -> Vec<T> {
-    let d = d as usize;
+pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: usize) -> Vec<T> {
     let mut y: Vec<T> = x.to_vec();
     let len = y.len();
     for s in 0..d {
@@ -146,8 +145,7 @@ pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
 /// let z = util::diff(&y, 1);
 /// assert_eq!(z, x);
 /// ```
-pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: u32) -> Vec<T> {
-    let d = d as usize;
+pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: usize) -> Vec<T> {
     let zero = From::from(0);
 
     // x vector with d leading zeros
@@ -204,8 +202,7 @@ pub fn mean<T: Num + Copy + Add<T, Output=T> + From<i32>>(x: &[T]) -> T {
 /// assert_eq!(y, [-2, -1, 0, 1, 2]);
 /// assert_eq!(m, 4);
 /// ```
-pub fn center<T: Num + Copy + Add + AddAssign + Copy + From<i32>>(x: &[T])
-                                                                              -> (Vec<T>, T) {
+pub fn center<T: Num + Copy + Add + AddAssign + Copy + From<i32>>(x: &[T]) -> (Vec<T>, T) {
     let m = mean(x);
     (x.iter().map(|&x| { x - m }).collect(), m)
 }
