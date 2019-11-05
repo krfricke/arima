@@ -19,7 +19,9 @@ extern crate netlib_src as raw;
 #[cfg(feature = "openblas")]
 extern crate openblas_src as raw;
 
+#[cfg(feature = "lapack")]
 extern crate lapack_sys;
+#[cfg(feature = "lapack")]
 extern crate lapack;
 
 extern crate num;

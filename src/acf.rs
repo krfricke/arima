@@ -2,7 +2,6 @@ use num::Float;
 
 use std::cmp;
 use std::convert::From;
-use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
 
@@ -87,24 +86,26 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 /// ```
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
-/// let ar = acf::ar(&x, Some(2)).unwrap();
+/// let (ar, _var) = acf::ar(&x, Some(2)).unwrap();
 /// assert!((ar[0] - 0.3466667).abs() < 1.0e-7);
 /// assert!((ar[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
 pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
     order: Option<usize>
-) -> Result<Vec<T>, ArimaError> {
+) -> Result<(Vec<T>, T), ArimaError> {
     let max_lag = match order {
         Some(order) => Some(order + 1),
         None => None
     };
-    let rho = acf(&x, max_lag, false).unwrap();
-    ar_rho(&rho, order)
+    let rho = acf(&x, max_lag, false)?;
+    let cov0 = acf(&x, Some(0), true)?[0].clone();
+    ar_dl_rho_cov(&rho, cov0, order)
 }
 
 /// Calculate the auto-regressive coefficients of a time series of length n, given
-/// the auto-correlation coefficients rho.
+/// the auto-correlation coefficients rho. Uses LAPACK's DPOSV function to solve the
+/// linear system and requires BLAS (e.g. OpenBLAS). Only enabled with feature `lapack`.
 ///
 /// # Arguments
 ///
@@ -121,11 +122,12 @@ pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, None, false).unwrap();
-/// let ar = acf::ar_rho(&rho, Some(2)).unwrap();
+/// let ar = acf::ar_lapack_rho(&rho, Some(2)).unwrap();
 /// assert!((ar[0] - 0.3466667).abs() < 1.0e-7);
 /// assert!((ar[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
-pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
+#[cfg(feature = "lapack")]
+pub fn ar_lapack_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
     order: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
@@ -187,7 +189,7 @@ pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
 ///
 /// # Returns
 ///
-/// * Output vector of length order containing the AR coefficients.
+/// * Tuple of an output vector containing the AR coefficients and an estimate for the variance.
 ///
 /// # Example
 ///
@@ -200,7 +202,7 @@ pub fn ar_rho<T: Float + From<f64> + Into<f64> + Copy>(
 /// assert!((ar[0] - 0.3466667).abs() < 1.0e-7);
 /// assert!((ar[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
-pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div + Debug>(
+pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     rho: &[T],
     cov0: T,
     order: Option<usize>
@@ -255,9 +257,10 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
 }
 
 
-/// Estimate the variance of a time series of length n.
+/// Estimate the variance of a time series of length n via Durbin-Levinson.
 /// If you already calculated the AR parameters, auto-correlation coefficients (ACF), and
-/// the auto-covariance for lag zero, consider using `var_phi_rho_cov` instead.
+/// the auto-covariance for lag zero, consider using `var_phi_rho_cov` instead. Please note that
+/// this might yield a different result.
 ///
 /// # Arguments
 ///
@@ -283,11 +286,11 @@ pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         Some(order) => Some(order + 1),
         None => None
     };
-    let rho = acf(&x, max_lag, false).unwrap();
-    let phi = ar_rho(&rho, order).unwrap();
-    let cov0 = acf(&x, Some(0), true).unwrap()[0].clone();
+    let rho = acf(&x, max_lag, false)?;
+    let cov0 = acf(&x, Some(0), true)?[0].clone();
+    let (_phi, var) = ar_dl_rho_cov(&rho, cov0, order).unwrap();
 
-    var_phi_rho_cov(&phi, &rho, cov0)
+    Ok(var)
 }
 
 /// Estimate the variance of a time series of length n, given the AR parameters,
@@ -308,8 +311,8 @@ pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, Some(3), false).unwrap();
-/// let phi = acf::ar_rho(&rho, Some(2)).unwrap();
 /// let cov0 = acf::acf(&x, Some(0), true).unwrap()[0].clone();
+/// let (phi, _var) = acf::ar_dl_rho_cov(&rho, cov0, Some(2)).unwrap();
 /// acf::var_phi_rho_cov(&phi, &rho, cov0);
 /// ```
 pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
@@ -354,8 +357,9 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     max_lag: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
     // get autocorrelations
-    let rho = acf(&x, max_lag, false).unwrap();
-    pacf_rho(&rho, max_lag)
+    let rho = acf(&x, max_lag, false)?;
+    let cov0 = acf(&x, Some(0), true)?[0].clone();
+    pacf_rho_cov0(&rho, cov0, max_lag)
 }
 
 /// Calculate the partial auto-correlation coefficients of a time series of length n, given
@@ -376,12 +380,14 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 /// use arima::acf;
 /// let x = [1.0, 1.2, 1.4, 1.6];
 /// let rho = acf::acf(&x, None, false).unwrap();
-/// let pr = acf::pacf_rho(&rho, Some(2)).unwrap();
+/// let cov0 = acf::acf(&x, Some(0), true).unwrap()[0];
+/// let pr = acf::pacf_rho_cov0(&rho, cov0, Some(2)).unwrap();
 /// assert!((pr[0] - 0.25).abs() < 1.0e-7);
 /// assert!((pr[1] - -0.3866667).abs() < 1.0e-7);
 /// ```
-pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
+pub fn pacf_rho_cov0<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     rho: &[T],
+    cov0: T,
     max_lag: Option<usize>
 ) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
@@ -396,16 +402,9 @@ pub fn pacf_rho<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>
 
     // calculate AR coefficients for each solution of order 1..max_lag
     for i in 1..m {
-        let coef = ar_rho(&rho, Some(i));
-        match coef {
-            Ok(coef) => {
-                // we now have a vector with i items, the last item is our partial correlation
-                y.push(From::from(coef[i-1]));
-            },
-            Err(_) => {
-                return Err(ArimaError);
-            }
-        }
+        let (coef, _var) = ar_dl_rho_cov(&rho, cov0, Some(i))?;
+        // we now have a vector with i items, the last item is our partial correlation
+        y.push(From::from(coef[i-1]));
     }
     Ok(y)
 }

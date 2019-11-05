@@ -149,10 +149,9 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
     // Initial guess for the intercept: First value of x
     coef.push(util::mean(&x));
 
-    let rho = acf::acf(&x, None, false).unwrap();
     // Initial guess for the AR coefficients: Values of the PACF
     if ar > 0 {
-        let pacf = acf::pacf_rho(&rho, Some(ar)).unwrap();
+        let pacf = acf::pacf(&x, Some(ar)).unwrap();
         for i in 0..ar {
             coef.push(pacf[i]);
         }
