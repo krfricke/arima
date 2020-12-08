@@ -28,7 +28,7 @@ lbfgs = "0.2.1"
 more-asserts = "0.2.1"
 num = "0.2.0"
 optimization = "0.1.0"
-rand = "0.6.5"
+rand = "0.7.3"
 
 [dependencies.lapack]
 version = "0.16.0"
