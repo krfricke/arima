@@ -40,7 +40,7 @@ pub fn arima_sim<T: Rng>(
     ar: Option<&[f64]>,
     ma: Option<&[f64]>,
     d: usize,
-    noise_fn: &dyn Fn(&mut T) -> f64,
+    noise_fn: &dyn FnMut(&mut T) -> f64,
     rng: &mut T
 ) -> Result<Vec<f64>, ArimaError> {
     let mut x: Vec<f64> = Vec::new();
@@ -146,7 +146,7 @@ pub fn arima_forecast<T: Rng>(
     ar: Option<&[f64]>,
     ma: Option<&[f64]>,
     d: usize,
-    noise_fn: &dyn Fn(&mut T) -> f64,
+    noise_fn: &dyn FnMut(&mut T) -> f64,
     rng: &mut T
 ) -> Result<Vec<f64>, ArimaError> {
     let n_past = ts.len();
