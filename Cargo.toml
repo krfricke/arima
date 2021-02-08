@@ -24,11 +24,11 @@ intel-mkl = ["lapack", "lapack-sys", "intel-mkl-src"]
 netlib = ["lapack", "lapack-sys", "netlib-src"]
 
 [dependencies]
-lbfgs = "0.2.1"
 more-asserts = "0.2.1"
 num = "0.2.0"
-optimization = "0.1.0"
 rand = "0.7.3"
+finitediff = "0.1.2"
+rustimization = { git = "https://github.com/frnsys/rustimization" }
 
 [dependencies.lapack]
 version = "0.16.0"
