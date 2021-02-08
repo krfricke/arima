@@ -6,8 +6,8 @@ use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
 
-use lbfgs::*;
-use optimization::{NumericalDifferentiation, Func, Function1};
+use rustimization::lbfgsb_minimizer::Lbfgsb;
+use finitediff::FiniteDiff;
 
 use crate::{ArimaError, acf, util};
 
@@ -124,23 +124,24 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
 
     // The objective is to minimize the conditional sum of squares (CSS),
     // i.e. the sum of the squared residuals
-    let objective = NumericalDifferentiation::new(Func(
-        |coef: &[f64]| {
-            assert_eq!(coef.len(), total_size);
+    let f = |coef: &Vec<f64>| {
+        assert_eq!(coef.len(), total_size);
 
-            let intercept = coef[0];
-            let phi = &coef[1..ar+1];
-            let theta = &coef[ar+1..];
+        let intercept = coef[0];
+        let phi = &coef[1..ar+1];
+        let theta = &coef[ar+1..];
 
-            let residuals = residuals(&x, intercept, Some(&phi), Some(&theta)).unwrap();
+        let residuals = residuals(&x, intercept, Some(&phi), Some(&theta)).unwrap();
 
-            let mut css: f64 = 0.0;
-            for i in 0..residuals.len() {
-                css += residuals[i] * residuals[i];
-            }
-            css
+        let mut css: f64 = 0.0;
+        for i in 0..residuals.len() {
+            css += residuals[i] * residuals[i];
         }
-    ));
+        css
+    };
+    let g = |coef: &Vec<f64>| {
+        coef.forward_diff(&f)
+    };
 
     // Initial coefficients
     // Todo: These initial guesses are rather arbitrary.
@@ -164,40 +165,14 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         }
     }
 
-    // Optimizer parameters
-    // Todo: Are these heuristics sensible?
-    let tolerance = 1e-14;
-    let lbfgs_memory = 5;
-    let max_iter: usize = 500;
+    let mut fmin = Lbfgsb::new(&mut coef, &f, &g);
 
-    let mut lbfgs = Lbfgs::new(total_size, lbfgs_memory)
-        .with_sy_epsilon(1e-8);
+    // For debugging
+    // fmin.set_verbosity(101);
+    fmin.set_verbosity(-1);
+    fmin.max_iteration(100);
 
-    // Initialize hessian at the origin.
-    lbfgs.update_hessian(&objective.gradient(&vec![0.0; total_size]), &vec![0.0; total_size]);
-
-    let mut gradient: Vec<f64>;
-    for _ in 0..max_iter {
-        // calculate gradient from coefficients
-        gradient = objective.gradient(&coef);
-        // update curvature information
-        lbfgs.update_hessian(&gradient, &coef);
-        // determine next direction
-        lbfgs.apply_hessian(&mut gradient);
-
-        let mut converged = true;
-        for i in 0..gradient.len() {
-            // Todo: We need to discover (and possibly mitigate?) divergence.
-            if gradient[i].abs() > tolerance {
-                converged = false;
-            }
-            coef[i] = coef[i] - gradient[i];
-        }
-
-        if converged {
-            break;
-        }
-    }
+    let result = fmin.minimize();
 
     Ok(coef)
 }
