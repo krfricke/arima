@@ -140,13 +140,13 @@ pub fn arima_sim<T: Rng>(
 ///     &mut thread_rng()
 /// ).unwrap();
 /// ```
-pub fn arima_forecast<T: Rng>(
+pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     ts: &[f64],
     n: usize,
     ar: Option<&[f64]>,
     ma: Option<&[f64]>,
     d: usize,
-    noise_fn: &dyn Fn(&mut T) -> f64,
+    noise_fn: &F,
     rng: &mut T
 ) -> Result<Vec<f64>, ArimaError> {
     let n_past = ts.len();
@@ -163,8 +163,8 @@ pub fn arima_forecast<T: Rng>(
     };
 
     // initialize forecast with noise
-    for _ in n_past..n_past+n {
-        let e = noise_fn(rng);
+    for i in 0..n {
+        let e = noise_fn(i, rng);
         x.push(e);
     }
 
