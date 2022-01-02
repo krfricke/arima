@@ -6,8 +6,8 @@ use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
 
-use lbfgs::*;
-use optimization::{NumericalDifferentiation, Func, Function1};
+use rustimization::lbfgsb_minimizer::Lbfgsb;
+use finitediff::FiniteDiff;
 
 use crate::{ArimaError, acf, util};
 
@@ -124,23 +124,24 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
 
     // The objective is to minimize the conditional sum of squares (CSS),
     // i.e. the sum of the squared residuals
-    let objective = NumericalDifferentiation::new(Func(
-        |coef: &[f64]| {
-            assert_eq!(coef.len(), total_size);
+    let f = |coef: &Vec<f64>| {
+        assert_eq!(coef.len(), total_size);
 
-            let intercept = coef[0];
-            let phi = &coef[1..ar+1];
-            let theta = &coef[ar+1..];
+        let intercept = coef[0];
+        let phi = &coef[1..ar+1];
+        let theta = &coef[ar+1..];
 
-            let residuals = residuals(&x, intercept, Some(&phi), Some(&theta)).unwrap();
+        let residuals = residuals(&x, intercept, Some(&phi), Some(&theta)).unwrap();
 
-            let mut css: f64 = 0.0;
-            for i in 0..residuals.len() {
-                css += residuals[i] * residuals[i];
-            }
-            css
+        let mut css: f64 = 0.0;
+        for i in 0..residuals.len() {
+            css += residuals[i] * residuals[i];
         }
-    ));
+        css
+    };
+    let g = |coef: &Vec<f64>| {
+        coef.forward_diff(&f)
+    };
 
     // Initial coefficients
     // Todo: These initial guesses are rather arbitrary.
@@ -164,40 +165,77 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         }
     }
 
-    // Optimizer parameters
-    // Todo: Are these heuristics sensible?
-    let tolerance = 1e-14;
-    let lbfgs_memory = 5;
-    let max_iter: usize = 500;
+    let mut fmin = Lbfgsb::new(&mut coef, &f, &g);
 
-    let mut lbfgs = Lbfgs::new(total_size, lbfgs_memory)
-        .with_sy_epsilon(1e-8);
+    // For debugging
+    // fmin.set_verbosity(101);
+    fmin.set_verbosity(-1);
+    fmin.max_iteration(100);
 
-    // Initialize hessian at the origin.
-    lbfgs.update_hessian(&objective.gradient(&vec![0.0; total_size]), &vec![0.0; total_size]);
-
-    let mut gradient: Vec<f64>;
-    for _ in 0..max_iter {
-        // calculate gradient from coefficients
-        gradient = objective.gradient(&coef);
-        // update curvature information
-        lbfgs.update_hessian(&gradient, &coef);
-        // determine next direction
-        lbfgs.apply_hessian(&mut gradient);
-
-        let mut converged = true;
-        for i in 0..gradient.len() {
-            // Todo: We need to discover (and possibly mitigate?) divergence.
-            if gradient[i].abs() > tolerance {
-                converged = false;
-            }
-            coef[i] = coef[i] - gradient[i];
-        }
-
-        if converged {
-            break;
-        }
-    }
+    let result = fmin.minimize();
 
     Ok(coef)
+}
+
+/// TODO clean up
+/// Auto-fit an ARIMA model, guessing AR and MA orders.
+/// See `fit` for more details.
+///
+/// # Arguments
+///
+/// * `&x` - Vector of the timeseries.
+/// * `d` - Order of differencing.
+///
+/// # Returns
+///
+/// * ARIMA coefficients minimizing the conditional sum of squares (CSS).
+pub fn autofit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign + Div + Debug>(
+    x: &[T],
+    d: usize,
+) -> Result<Vec<f64>, ArimaError>{
+    let x: Vec<f64> = x.iter().map(|v| (*v).into()).collect();
+    let n = x.len() as f64;
+    let n_lags = 12;
+
+    // Hardcoding for now
+    // let alpha = 0.05;
+    // ppf = scipy.stats.norm.ppf(1 - alpha / 2.0)
+    let ppf = 1.959963984540054;
+
+    // Estimate MA order
+    // <https://www.statsmodels.org/devel/_modules/statsmodels/tsa/stattools.html#acf>
+    let _acf = acf::acf(&x, Some(n_lags), false).unwrap();
+    let mult: Vec<f64> = _acf[1.._acf.len()-1].iter().scan(0., |acc, v| {
+        *acc += v.powf(2.);
+        Some(1. + 2. * *acc)
+    }).collect();
+    let mut varacf = vec![0., 1./n];
+    let varacf_end: Vec<f64> = (0.._acf.len()-2).map(|i| {
+        1./n * mult[i]
+    }).collect();
+    varacf.extend(varacf_end);
+
+    let interval: Vec<f64> = varacf.iter().map(|v| ppf * v.sqrt()).collect();
+    let confint: Vec<(f64, f64)> = _acf.iter().zip(&interval).map(|(p, q)| (p - q, p + q)).collect();
+    let bounds: Vec<(f64, f64)> = confint.iter().zip(&_acf).map(|((l, u), a)| {
+        (l - a, u - a)
+    }).collect();
+
+    // Subtract one to compensate for the first value (lag=0)
+    let ma_order = _acf.iter().zip(bounds).take_while(|(a, (l, u))| a < &l || a > &u).count() - 1;
+
+    // <https://www.statsmodels.org/devel/_modules/statsmodels/tsa/stattools.html#pacf>
+    let _pacf = acf::pacf(&x, Some(n_lags)).unwrap();
+    let pacf_varacf = 1.0 / n;
+    let pacf_interval = ppf * pacf_varacf.sqrt();
+    let pacf_confint: Vec<(f64, f64)> = _pacf.iter().map(|p| (p - pacf_interval, p + pacf_interval)).collect();
+
+    let pacf_bounds: Vec<(f64, f64)> = pacf_confint.iter().zip(&_pacf).map(|((l, u), a)| {
+        (l - a, u - a)
+    }).collect();
+
+    // lag=0 isn't included so no need to subtract one
+    let ar_order = _pacf.iter().zip(pacf_bounds).take_while(|(a, (l, u))| a < &l || a > &u).count();
+
+    fit(&x, ar_order, d, ma_order)
 }
