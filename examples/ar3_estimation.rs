@@ -1,7 +1,6 @@
 extern crate rand;
 use rand::prelude::*;
-use rand::distributions::{Normal, Distribution};
-
+use rand_distr::{Distribution, Normal};
 use arima::{acf, sim};
 
 fn main() {
@@ -9,7 +8,7 @@ fn main() {
     let mut rng: StdRng = SeedableRng::from_seed([100; 32]);
 
     // our noise should be normally distributed
-    let normal = Normal::new(10.0, 2.0);
+    let normal = Normal::new(10.0, 2.0).unwrap();
 
     // simulate time series
     let ts = sim::arima_sim(

@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div};
 use std::result::Result;
 
-use rustimization::lbfgsb_minimizer::Lbfgsb;
+use liblbfgs::lbfgs;
 use finitediff::FiniteDiff;
 
 use crate::{ArimaError, acf, util};
@@ -165,14 +165,26 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         }
     }
 
-    let mut fmin = Lbfgsb::new(&mut coef, &f, &g);
+    let evaluate = |x: &[f64], gx: &mut [f64]| {
+        let x_vec = x.to_vec();
+        let fx = f(&x_vec);
+        let gx_eval = g(&x_vec);
+        for i in 0..gx_eval.len() {
+            gx[i] = gx_eval[i];
+        }
+        Ok(fx)
+    };
 
-    // For debugging
-    // fmin.set_verbosity(101);
-    fmin.set_verbosity(-1);
-    fmin.max_iteration(100);
-
-    let result = fmin.minimize();
+    let fmin = lbfgs().with_max_iterations(0);
+    let _result = fmin.minimize(
+        &mut coef, // input variables
+        evaluate,  // define how to evaluate function
+        |prgr| {
+            // define progress monitor
+            println!("iter: {:?}", prgr);
+            false // returning true will cancel optimization
+        },
+    );
 
     Ok(coef)
 }
