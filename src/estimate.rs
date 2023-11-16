@@ -176,14 +176,14 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
     };
 
     let fmin = lbfgs().with_max_iterations(100);
-    let _result = fmin.minimize(
+    fmin.minimize(
         &mut coef, // input variables
         evaluate,  // define how to evaluate function
         |prgr| {
             // define progress monitor
             false // returning true will cancel optimization
         },
-    )?;
+    ).map_err(|_e| ArimaError);
 
     Ok(coef)
 }
