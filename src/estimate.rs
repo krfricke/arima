@@ -175,7 +175,7 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         Ok(fx)
     };
 
-    let fmin = lbfgs().with_max_iterations(0);
+    let fmin = lbfgs().with_max_iterations(100);
     let _result = fmin.minimize(
         &mut coef, // input variables
         evaluate,  // define how to evaluate function
