@@ -184,7 +184,7 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
             println!("iter: {:?}", prgr);
             false // returning true will cancel optimization
         },
-    );
+    )?;
 
     Ok(coef)
 }
