@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod test_sim {
     extern crate rand;
+    use rand::distributions::{Distribution, Normal};
     use rand::prelude::*;
-    use rand::distributions::{Normal, Distribution};
 
     #[test]
     fn sim_ma() {
@@ -14,9 +14,10 @@ mod test_sim {
             None,
             Some(&[0.4, 0.2]),
             0,
-            &|mut rng| { normal.sample(&mut rng) },
-            &mut rng
-        ).unwrap();
+            &|mut rng| normal.sample(&mut rng),
+            &mut rng,
+        )
+        .unwrap();
 
         // currently we only check if a timeseries was created correctly.
         // we do not check if it follows the given parameters.
@@ -33,9 +34,10 @@ mod test_sim {
             Some(&[0.9]),
             None,
             0,
-            &|mut rng| { normal.sample(&mut rng) },
-            &mut rng
-        ).unwrap();
+            &|mut rng| normal.sample(&mut rng),
+            &mut rng,
+        )
+        .unwrap();
 
         // It's hard to reliably test a simulated model, so we use a seed and calculate
         // the lag-1 PACF of an AR(1) model an expect it to match the coefficient
