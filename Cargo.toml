@@ -26,7 +26,8 @@ netlib = ["lapack", "lapack-sys", "netlib-src"]
 [dependencies]
 more-asserts = "0.3.1"
 num = "0.4.1"
-rand = "0.7.3"
+rand = "0.8.5"
+rand_distr = "0.4.3"
 finitediff = "0.1.4"
 liblbfgs = "0.1.0"
 

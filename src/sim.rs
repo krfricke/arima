@@ -22,9 +22,9 @@ use rand::Rng;
 ///
 /// ```
 /// use rand::prelude::*;
-/// use rand::distributions::{Normal, Distribution};
+/// use rand_distr::{Normal, Distribution};
 ///
-/// let normal = Normal::new(0.0, 2.0);
+/// let normal = Normal::new(0.0, 2.0).unwrap();
 ///
 /// let x = arima::sim::arima_sim(
 ///     100,
@@ -124,9 +124,9 @@ pub fn arima_sim<T: Rng>(
 ///
 /// ```
 /// use rand::prelude::*;
-/// use rand::distributions::{Normal, Distribution};
+/// use rand_distr::{Normal, Distribution};
 ///
-/// let normal = Normal::new(0.0, 2.0);
+/// let normal = Normal::new(0.0, 2.0).unwrap();
 ///
 /// let ts = [0.632, 0.594, -2.750, -5.389, -5.645, -7.672, -12.595, -18.260, -24.147, -31.427];
 ///
