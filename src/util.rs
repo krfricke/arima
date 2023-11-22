@@ -1,5 +1,5 @@
 use core::ops::{Neg, Sub};
-use num::{Num, Float};
+use num::{Float, Num};
 use std::ops::{Add, AddAssign};
 
 /// Returns a n-tau vector containing the time series lagged by tau.
@@ -47,13 +47,13 @@ pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
 /// let x = [1, 2, 3];
 /// assert_eq!(util::diff(&x, 1), &[1, 1])
 /// ```
-pub fn diff<T: Num + Copy + Neg<Output=T> + Sub>(x: &[T], d: usize) -> Vec<T> {
+pub fn diff<T: Num + Copy + Neg<Output = T> + Sub>(x: &[T], d: usize) -> Vec<T> {
     let mut y: Vec<T> = x.to_vec();
     let len = y.len();
     for s in 0..d {
-        for i in 1..len-s {
+        for i in 1..len - s {
             // we iterate backwards through the vector to avoid cloning
-            y[len-i] = y[len-i] - y[len-i-1];
+            y[len - i] = y[len - i] - y[len - i - 1];
         }
     }
     y.drain(0..d);
@@ -83,11 +83,11 @@ pub fn diff_log<T: Float>(x: &[T]) -> Vec<T> {
     let mut y: Vec<T> = x.to_vec();
     let len = y.len();
 
-    y[len-1] = y[len-1].ln();
+    y[len - 1] = y[len - 1].ln();
     for i in 1..len {
         // we iterate backwards through the vector to avoid re-calculation of ln()
-        y[len-i-1] = y[len-i-1].ln();
-        y[len-i] = y[len-i] - y[len-i-1];
+        y[len - i - 1] = y[len - i - 1].ln();
+        y[len - i] = y[len - i] - y[len - i - 1];
     }
     y.drain(0..1);
     y
@@ -118,7 +118,7 @@ pub fn cumsum<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T]) -> Vec<T> {
     }
     y.push(x[0]);
     for i in 1..x.len() {
-        y.push(y[i-1] + x[i]);
+        y.push(y[i - 1] + x[i]);
     }
     y
 }
@@ -176,7 +176,7 @@ pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: usize) ->
 /// let y = util::mean(&x);
 /// assert_eq!(y, 4);
 /// ```
-pub fn mean<T: Num + Copy + Add<T, Output=T> + From<i32>>(x: &[T]) -> T {
+pub fn mean<T: Num + Copy + Add<T, Output = T> + From<i32>>(x: &[T]) -> T {
     let zero: T = From::from(0 as i32);
     let n: T = From::from(x.len() as i32);
     x.iter().fold(zero, |sum, &item| sum + item) / n
@@ -204,5 +204,5 @@ pub fn mean<T: Num + Copy + Add<T, Output=T> + From<i32>>(x: &[T]) -> T {
 /// ```
 pub fn center<T: Num + Copy + Add + AddAssign + Copy + From<i32>>(x: &[T]) -> (Vec<T>, T) {
     let m = mean(x);
-    (x.iter().map(|&x| { x - m }).collect(), m)
+    (x.iter().map(|&x| x - m).collect(), m)
 }
