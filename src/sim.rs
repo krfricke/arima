@@ -1,4 +1,4 @@
-use crate::ArimaError;
+use anyhow::Result;
 
 use crate::util;
 use rand::Rng;
@@ -42,7 +42,7 @@ pub fn arima_sim<T: Rng>(
     d: usize,
     noise_fn: &dyn Fn(&mut T) -> f64,
     rng: &mut T,
-) -> Result<Vec<f64>, ArimaError> {
+) -> Result<Vec<f64>> {
     let mut x: Vec<f64> = Vec::new();
 
     // get orders
@@ -148,7 +148,7 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     d: usize,
     noise_fn: &F,
     rng: &mut T,
-) -> Result<Vec<f64>, ArimaError> {
+) -> Result<Vec<f64>> {
     let n_past = ts.len();
     let mut x = ts.to_vec();
 

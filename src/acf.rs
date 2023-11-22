@@ -1,11 +1,9 @@
+use anyhow::Result;
 use num::Float;
 
 use std::cmp;
 use std::convert::From;
 use std::ops::{Add, AddAssign, Div};
-use std::result::Result;
-
-use crate::ArimaError;
 
 /// Calculate the auto-correlation function of a time series of length n.
 ///
@@ -33,7 +31,7 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
     max_lag: Option<usize>,
     covariance: bool,
-) -> Result<Vec<T>, ArimaError> {
+) -> Result<Vec<T>> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
         Some(max_lag) => cmp::min(max_lag, x.len() - 1),
@@ -93,7 +91,7 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
     order: Option<usize>,
-) -> Result<(Vec<T>, T), ArimaError> {
+) -> Result<(Vec<T>, T)> {
     let max_lag = order.map(|order| order + 1);
     let rho = acf(x, max_lag, false)?;
     let cov0 = acf(x, Some(0), true)?[0];
@@ -127,7 +125,7 @@ pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 pub fn ar_lapack_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
     order: Option<usize>,
-) -> Result<Vec<T>, ArimaError> {
+) -> Result<Vec<T>> {
     // phi_0 will be calculated separately
     let n = match order {
         Some(order) => cmp::min(order, rho.len() - 1),
@@ -161,7 +159,7 @@ pub fn ar_lapack_rho<T: Float + From<f64> + Into<f64> + Copy>(
     }
 
     if info != 0 {
-        return Err(ArimaError);
+        anyhow::bail!("Matrix is not positive-definite");
     }
 
     // convert back to T
@@ -203,7 +201,7 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
     rho: &[T],
     cov0: T,
     order: Option<usize>,
-) -> Result<(Vec<T>, T), ArimaError> {
+) -> Result<(Vec<T>, T)> {
     let order = match order {
         Some(order) => cmp::min(order, rho.len() - 1),
         None => rho.len() - 1,
@@ -277,7 +275,7 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
 pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
     order: Option<usize>,
-) -> Result<T, ArimaError> {
+) -> Result<T> {
     let max_lag = order.map(|order| order + 1);
     let rho = acf(x, max_lag, false)?;
     let cov0 = acf(x, Some(0), true)?[0];
@@ -312,7 +310,7 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
     phi: &[T],
     rho: &[T],
     cov0: T,
-) -> Result<T, ArimaError> {
+) -> Result<T> {
     assert!(rho.len() > phi.len());
 
     let mut sum: T = From::from(0.0);
@@ -348,7 +346,7 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
 pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
     max_lag: Option<usize>,
-) -> Result<Vec<T>, ArimaError> {
+) -> Result<Vec<T>> {
     // get autocorrelations
     let rho = acf(x, max_lag, false)?;
     let cov0 = acf(x, Some(0), true)?[0];
@@ -382,7 +380,7 @@ pub fn pacf_rho_cov0<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAs
     rho: &[T],
     cov0: T,
     max_lag: Option<usize>,
-) -> Result<Vec<T>, ArimaError> {
+) -> Result<Vec<T>> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
         Some(max_lag) => cmp::min(max_lag, rho.len() - 1),
