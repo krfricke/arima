@@ -30,6 +30,7 @@ rand = "0.8.5"
 rand_distr = "0.4.3"
 finitediff = "0.1.4"
 liblbfgs = "0.1.0"
+tracing = "0.1.40"
 
 [dependencies.lapack]
 version = "0.16.0"

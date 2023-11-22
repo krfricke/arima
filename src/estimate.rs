@@ -175,15 +175,16 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         Ok(fx)
     };
 
-    let fmin = lbfgs().with_max_iterations(100);
-    let _result = fmin.minimize(
+    let fmin = lbfgs().with_max_iterations(200);
+    if let Err(e) = fmin.minimize(
         &mut coef, // input variables
         evaluate,  // define how to evaluate function
-        |prgr| {
-            // define progress monitor
+        |_prgr| {
             false // returning true will cancel optimization
         },
-    )?;
+    ) {
+        tracing::warn!("Got error during fit: {}", e);
+    }
 
     Ok(coef)
 }

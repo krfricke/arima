@@ -137,7 +137,7 @@ pub fn arima_sim<T: Rng>(
 ///     Some(&[0.9, -0.3, 0.2]),
 ///     Some(&[0.4, 0.2]),
 ///     1,
-///     &|mut rng| { normal.sample(&mut rng) },
+///     &|i, mut rng| { normal.sample(&mut rng) },
 ///     &mut thread_rng()
 /// ).unwrap();
 /// ```
