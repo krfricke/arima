@@ -48,11 +48,11 @@ pub fn arima_sim<T: Rng>(
     // get orders
     let ar_order = match ar {
         Some(par) => par.len(),
-        None => 0 as usize,
+        None => 0_usize,
     };
     let ma_order = match ma {
         Some(par) => par.len(),
-        None => 0 as usize,
+        None => 0_usize,
     };
 
     // create some noise for the startup
@@ -155,11 +155,11 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     // get orders
     let ar_order = match ar {
         Some(par) => par.len(),
-        None => 0 as usize,
+        None => 0_usize,
     };
     let ma_order = match ma {
         Some(par) => par.len(),
-        None => 0 as usize,
+        None => 0_usize,
     };
 
     // initialize forecast with noise

@@ -177,7 +177,7 @@ pub fn diffinv<T: Num + Add + AddAssign + Copy + From<u8>>(x: &[T], d: usize) ->
 /// assert_eq!(y, 4);
 /// ```
 pub fn mean<T: Num + Copy + Add<T, Output = T> + From<i32>>(x: &[T]) -> T {
-    let zero: T = From::from(0 as i32);
+    let zero: T = From::from(0_i32);
     let n: T = From::from(x.len() as i32);
     x.iter().fold(zero, |sum, &item| sum + item) / n
 }

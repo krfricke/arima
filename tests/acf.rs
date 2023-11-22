@@ -181,7 +181,7 @@ mod test_acf {
         assert_eq!(ar_real.len(), ar_calc.len());
 
         for i in 0..ar_real.len() {
-            assert_lt!((ar_real[i] - ar_calc[i] as f64).abs(), 1.0e-7);
+            assert_lt!((ar_real[i] - ar_calc[i]).abs(), 1.0e-7);
         }
     }
 
@@ -196,7 +196,7 @@ mod test_acf {
         assert_eq!(ar_real.len(), ar_calc.len());
 
         for i in 0..ar_real.len() {
-            assert_lt!((ar_real[i] - ar_calc[i] as f64).abs(), 1.0e-7);
+            assert_lt!((ar_real[i] - ar_calc[i]).abs(), 1.0e-7);
         }
     }
 
@@ -236,7 +236,7 @@ mod test_acf {
         assert_lt!(var - 1691.7126551, 1.0e-7);
 
         for i in 0..ar_real.len() {
-            assert_lt!((ar_real[i] - ar_calc[i] as f64).abs(), 1.0e-7);
+            assert_lt!((ar_real[i] - ar_calc[i]).abs(), 1.0e-7);
         }
     }
 
@@ -257,7 +257,7 @@ mod test_acf {
         assert_lt!(var - 1691.7126551, 1.0e-7);
 
         for i in 0..ar_real.len() {
-            assert_lt!((ar_real[i] - ar_calc[i] as f64).abs(), 1.0e-7);
+            assert_lt!((ar_real[i] - ar_calc[i]).abs(), 1.0e-7);
         }
     }
 

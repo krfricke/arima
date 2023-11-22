@@ -45,14 +45,8 @@ pub fn residuals<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div
     phi: Option<&[T]>,
     theta: Option<&[T]>,
 ) -> Result<Vec<T>, ArimaError> {
-    let phi = match phi {
-        Some(phi) => phi,
-        None => &[],
-    };
-    let theta = match theta {
-        Some(theta) => theta,
-        None => &[],
-    };
+    let phi = phi.unwrap_or(&[]);
+    let theta = theta.unwrap_or(&[]);
 
     if x.len() < phi.len() || x.len() < theta.len() {
         return Err(ArimaError);
@@ -131,7 +125,7 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         let phi = &coef[1..ar + 1];
         let theta = &coef[ar + 1..];
 
-        let residuals = residuals(&x, intercept, Some(&phi), Some(&theta)).unwrap();
+        let residuals = residuals(&x, intercept, Some(phi), Some(theta)).unwrap();
 
         let mut css: f64 = 0.0;
         for i in 0..residuals.len() {
