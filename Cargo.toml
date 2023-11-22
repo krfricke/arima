@@ -1,7 +1,7 @@
 [package]
 name = "arima"
 description = "ARIMA time series modeling for Rust."
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Kai Fricke <coding@kaifricke.com>"]
 edition = "2018"
 license-file = "LICENSE"
