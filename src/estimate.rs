@@ -104,8 +104,8 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
 ) -> Result<Vec<f64>, ArimaError> {
     // Convert into f64 as the optimizer functions only support f64
     let mut x64: Vec<f64> = Vec::new();
-    for i in 0..x.len() {
-        x64.push(x[i].into());
+    for a in x {
+        x64.push((*a).into());
     }
     let mut x = x64;
 
@@ -128,8 +128,8 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
         let residuals = residuals(&x, intercept, Some(phi), Some(theta)).unwrap();
 
         let mut css: f64 = 0.0;
-        for i in 0..residuals.len() {
-            css += residuals[i] * residuals[i];
+        for residual in &residuals {
+            css += residual * residual;
         }
         css
     };
@@ -145,25 +145,22 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
     // Initial guess for the AR coefficients: Values of the PACF
     if ar > 0 {
         let pacf = acf::pacf(&x, Some(ar)).unwrap();
-        for i in 0..ar {
-            coef.push(pacf[i]);
+        for p in pacf {
+            coef.push(p);
         }
     }
 
     // Initial guess for the MA coefficients: 1.0
     if ma > 0 {
-        for _ in 0..ma {
-            coef.push(1.0);
-        }
+        coef.resize(coef.len() + ma, 1.0);
     }
 
     let evaluate = |x: &[f64], gx: &mut [f64]| {
         let x_vec = x.to_vec();
         let fx = f(&x_vec);
         let gx_eval = g(&x_vec);
-        for i in 0..gx_eval.len() {
-            gx[i] = gx_eval[i];
-        }
+        // copy values from gx_eval into gx
+        gx[..gx_eval.len()].copy_from_slice(&gx_eval[..]);
         Ok(fx)
     };
 

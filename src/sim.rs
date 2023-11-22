@@ -76,8 +76,8 @@ pub fn arima_sim<T: Rng>(
         }
 
         // set the un-regressed first 0..ma_order elements to zero
-        for i in 0..ma_order {
-            x[i] = 0.0
+        for a in x.iter_mut().take(ma_order) {
+            *a = 0.0
         }
     }
 

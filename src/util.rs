@@ -23,8 +23,8 @@ use std::ops::{Add, AddAssign};
 pub fn lag<T: Num + Copy>(x: &[T], tau: u32) -> Vec<T> {
     let mut y: Vec<T> = Vec::new();
     assert!(tau < x.len() as u32);
-    for i in tau as usize..x.len() {
-        y.push(x[i]);
+    for a in x.iter().skip(tau as usize) {
+        y.push(*a);
     }
     y
 }
