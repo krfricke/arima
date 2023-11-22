@@ -2,12 +2,12 @@
 mod test_sim {
     extern crate rand;
     use rand::prelude::*;
-    use rand::distributions::{Normal, Distribution};
+    use rand_distr::{Distribution, Normal};
 
     #[test]
     fn sim_ma() {
         let mut rng: StdRng = SeedableRng::from_seed([100; 32]);
-        let normal = Normal::new(0.0, 2.0);
+        let normal = Normal::new(0.0, 2.0).unwrap();
 
         let x = arima::sim::arima_sim(
             100,
@@ -26,7 +26,7 @@ mod test_sim {
     #[test]
     fn sim_ar() {
         let mut rng: StdRng = SeedableRng::from_seed([100; 32]);
-        let normal = Normal::new(0.0, 2.0);
+        let normal = Normal::new(0.0, 2.0).unwrap();
 
         let x = arima::sim::arima_sim(
             100,
