@@ -1,15 +1,16 @@
+use anyhow::Result;
+
 use num::Float;
 
 use std::cmp::min;
 use std::convert::From;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div};
-use std::result::Result;
 
 use finitediff::FiniteDiff;
 use liblbfgs::lbfgs;
 
-use crate::{acf, util, ArimaError};
+use crate::{acf, util};
 
 /// Calculate residuals given a time series, an intercept, and ARMA parameters
 /// phi and theta. Any differencing and centering should be done before.
@@ -44,12 +45,12 @@ pub fn residuals<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div
     intercept: T,
     phi: Option<&[T]>,
     theta: Option<&[T]>,
-) -> Result<Vec<T>, ArimaError> {
+) -> Result<Vec<T>> {
     let phi = phi.unwrap_or(&[]);
     let theta = theta.unwrap_or(&[]);
 
     if x.len() < phi.len() || x.len() < theta.len() {
-        return Err(ArimaError);
+        anyhow::bail!("Too many items in phi or theta");
     }
 
     let zero: T = From::from(0.0);
@@ -101,7 +102,7 @@ pub fn fit<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
     ar: usize,
     d: usize,
     ma: usize,
-) -> Result<Vec<f64>, ArimaError> {
+) -> Result<Vec<f64>> {
     // Convert into f64 as the optimizer functions only support f64
     let mut x64: Vec<f64> = Vec::new();
     for a in x {
@@ -195,7 +196,7 @@ pub fn autofit<
 >(
     x: &[T],
     d: usize,
-) -> Result<Vec<f64>, ArimaError> {
+) -> Result<Vec<f64>> {
     let x: Vec<f64> = x.iter().map(|v| (*v).into()).collect();
     let n = x.len() as f64;
     let n_lags = 12;

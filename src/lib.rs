@@ -4,9 +4,6 @@ pub mod util;
 
 pub mod estimate;
 
-#[derive(Debug, Clone)]
-pub struct ArimaError;
-
 #[cfg(feature = "accelerate")]
 extern crate accelerate_src as raw;
 
