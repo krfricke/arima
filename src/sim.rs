@@ -41,23 +41,23 @@ pub fn arima_sim<T: Rng>(
     ma: Option<&[f64]>,
     d: usize,
     noise_fn: &dyn Fn(&mut T) -> f64,
-    rng: &mut T
+    rng: &mut T,
 ) -> Result<Vec<f64>, ArimaError> {
     let mut x: Vec<f64> = Vec::new();
 
     // get orders
     let ar_order = match ar {
         Some(par) => par.len(),
-        None => 0 as usize
+        None => 0_usize,
     };
     let ma_order = match ma {
         Some(par) => par.len(),
-        None => 0 as usize
+        None => 0_usize,
     };
 
     // create some noise for the startup
     let burn_in = ar_order + ma_order + 10;
-    for _ in 0..burn_in+n {
+    for _ in 0..burn_in + n {
         let e = noise_fn(rng);
         x.push(e);
     }
@@ -69,15 +69,15 @@ pub fn arima_sim<T: Rng>(
         // copy into noise vector for MA regression
         let noise = x.clone();
         // the first 0..ma_order elements are not regressed
-        for i in ma_order..burn_in+n {
+        for i in ma_order..burn_in + n {
             for j in 0..ma_order {
                 x[i] += ma[j] * noise[i - j - 1];
             }
         }
 
         // set the un-regressed first 0..ma_order elements to zero
-        for i in 0..ma_order {
-            x[i] = 0.0
+        for a in x.iter_mut().take(ma_order) {
+            *a = 0.0
         }
     }
 
@@ -86,7 +86,7 @@ pub fn arima_sim<T: Rng>(
         let ar = ar.unwrap();
 
         // the first 0..ma_order+ar_order are not regressed
-        for i in ma_order+ar_order..burn_in+n {
+        for i in ma_order + ar_order..burn_in + n {
             for j in 0..ar_order {
                 x[i] += ar[j] * x[i - j - 1];
             }
@@ -96,14 +96,13 @@ pub fn arima_sim<T: Rng>(
     // remove burn_in part from vector, calculate differences
     if d > 0 {
         // also remove last d elements as there will be d zeros at the start
-        x = util::diffinv(&x[burn_in..x.len()-d], d);
+        x = util::diffinv(&x[burn_in..x.len() - d], d);
     } else {
         x.drain(0..burn_in);
     }
 
     Ok(x)
 }
-
 
 /// Forecast an ARIMA model time series
 ///
@@ -148,7 +147,7 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     ma: Option<&[f64]>,
     d: usize,
     noise_fn: &F,
-    rng: &mut T
+    rng: &mut T,
 ) -> Result<Vec<f64>, ArimaError> {
     let n_past = ts.len();
     let mut x = ts.to_vec();
@@ -156,11 +155,11 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     // get orders
     let ar_order = match ar {
         Some(par) => par.len(),
-        None => 0 as usize
+        None => 0_usize,
     };
     let ma_order = match ma {
         Some(par) => par.len(),
-        None => 0 as usize
+        None => 0_usize,
     };
 
     // initialize forecast with noise
@@ -173,7 +172,7 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     if ma_order > 0 {
         let ma = ma.unwrap();
         let x_ = x.clone();
-        for i in n_past..n_past+n {
+        for i in n_past..n_past + n {
             for j in 0..ma_order {
                 x[i] += ma[j] * x_[i - j - 1];
             }
@@ -183,7 +182,7 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     // calculate AR part
     if ar_order > 0 {
         let ar = ar.unwrap();
-        for i in n_past..n_past+n {
+        for i in n_past..n_past + n {
             for j in 0..ar_order {
                 x[i] += ar[j] * x[i - j - 1];
             }
@@ -200,5 +199,4 @@ pub fn arima_forecast<F: Fn(usize, &mut T) -> f64, T: Rng>(
     }
 
     Ok(x)
-
 }

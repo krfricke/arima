@@ -32,12 +32,12 @@ use crate::ArimaError;
 pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
     max_lag: Option<usize>,
-    covariance: bool
+    covariance: bool,
 ) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
         Some(max_lag) => cmp::min(max_lag, x.len() - 1),
-        None => x.len() - 1
+        None => x.len() - 1,
     };
     let m = max_lag + 1;
 
@@ -52,10 +52,10 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     let mut y: Vec<T> = vec![From::from(0.0); m];
 
     for t in 0..m {
-        for i in 0..len_x_usize-t {
+        for i in 0..len_x_usize - t {
             let xi = x[i] - mean_x;
-            let xi_t = x[i+t] - mean_x;
-            y[t] = y[t] + (xi * xi_t) / len_x;
+            let xi_t = x[i + t] - mean_x;
+            y[t] += (xi * xi_t) / len_x;
         }
         // we need y[0] to calculate the correlations, so we set it to 1.0 at the end
         if !covariance && t > 0 {
@@ -92,14 +92,11 @@ pub fn acf<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
 /// ```
 pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
-    order: Option<usize>
+    order: Option<usize>,
 ) -> Result<(Vec<T>, T), ArimaError> {
-    let max_lag = match order {
-        Some(order) => Some(order + 1),
-        None => None
-    };
-    let rho = acf(&x, max_lag, false)?;
-    let cov0 = acf(&x, Some(0), true)?[0].clone();
+    let max_lag = order.map(|order| order + 1);
+    let rho = acf(x, max_lag, false)?;
+    let cov0 = acf(x, Some(0), true)?[0];
     ar_dl_rho_cov(&rho, cov0, order)
 }
 
@@ -129,29 +126,29 @@ pub fn ar<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 #[cfg(feature = "lapack")]
 pub fn ar_lapack_rho<T: Float + From<f64> + Into<f64> + Copy>(
     rho: &[T],
-    order: Option<usize>
+    order: Option<usize>,
 ) -> Result<Vec<T>, ArimaError> {
     // phi_0 will be calculated separately
     let n = match order {
         Some(order) => cmp::min(order, rho.len() - 1),
-        None => rho.len() - 1
+        None => rho.len() - 1,
     };
 
     // we try to solve mr * x = r for x
 
     // build lower triangle matrix
-    let mut mr: Vec<f64> = vec![1.0; n*n];
+    let mut mr: Vec<f64> = vec![1.0; n * n];
 
     for i in 0..n {
-        for j in i+1..n {
-            mr[i*n+j] = std::convert::Into::into(rho[j-i]);
+        for j in i + 1..n {
+            mr[i * n + j] = std::convert::Into::into(rho[j - i]);
         }
     }
 
     // build right hand vector rho_1..rho_n
-    let mut b: Vec<f64> =vec![0.0; n];
+    let mut b: Vec<f64> = vec![0.0; n];
     for i in 0..n {
-        b[i] = std::convert::Into::into(rho[i+1]);
+        b[i] = std::convert::Into::into(rho[i + 1]);
     }
 
     // build arguments to pass
@@ -160,7 +157,7 @@ pub fn ar_lapack_rho<T: Float + From<f64> + Into<f64> + Copy>(
 
     // run lapack routine to solve symmetric positive-definite matrix system
     unsafe {
-        lapack::dposv(b'L', ni,1, &mut mr, ni, &mut b, ni, &mut info);
+        lapack::dposv(b'L', ni, 1, &mut mr, ni, &mut b, ni, &mut info);
     }
 
     if info != 0 {
@@ -205,11 +202,11 @@ pub fn ar_lapack_rho<T: Float + From<f64> + Into<f64> + Copy>(
 pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     rho: &[T],
     cov0: T,
-    order: Option<usize>
+    order: Option<usize>,
 ) -> Result<(Vec<T>, T), ArimaError> {
     let order = match order {
         Some(order) => cmp::min(order, rho.len() - 1),
-        None => rho.len() - 1
+        None => rho.len() - 1,
     };
 
     // we need zero values more than once, so we'll use this helper var
@@ -217,14 +214,14 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
     let one = From::from(1.0);
 
     // these vectors will hold the parameter values
-    let mut phi: Vec<Vec<T>> = vec![Vec::new(); order+1];
+    let mut phi: Vec<Vec<T>> = vec![Vec::new(); order + 1];
     let mut var: Vec<T> = Vec::new();
 
     // initialize zero-order estimates
     phi[0].push(zero);
     var.push(cov0);
 
-    for i in 1..order+1 {
+    for i in 1..order + 1 {
         // first allocate values for the phi vector so we can use phi[i][i-1]
         for _ in 0..i {
             phi[i].push(zero);
@@ -234,28 +231,27 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
         // phi_i,i = rho(i) - sum_{k=1}^{n-1}(phi_{n-1,k} * rho(n-k) /
         //  (1 - sum_{k=1}^{n-1}(phi_{n-1,k} * rho(k))
 
-        let mut num_sum = zero;  // numerator sum
-        let mut den_sum = one;       // denominator sum
+        let mut num_sum = zero; // numerator sum
+        let mut den_sum = one; // denominator sum
 
         for k in 1..i {
-            let p = phi[i-1][k-1];
-            num_sum += p * rho[i-k];
+            let p = phi[i - 1][k - 1];
+            num_sum += p * rho[i - k];
             den_sum += -p * rho[k];
         }
 
         let phi_ii = (rho[i] - num_sum) / den_sum;
-        phi[i][i-1] = phi_ii;
+        phi[i][i - 1] = phi_ii;
 
-        var.push(var[i-1] * (one - phi_ii*phi_ii));
+        var.push(var[i - 1] * (one - phi_ii * phi_ii));
 
         for k in 1..i {
             phi[i][k - 1] = phi[i - 1][k - 1] - phi[i][i - 1] * phi[i - 1][i - k - 1];
         }
     }
 
-    Ok((phi[order].clone(), var[order].clone()))
+    Ok((phi[order].clone(), var[order]))
 }
-
 
 /// Estimate the variance of a time series of length n via Durbin-Levinson.
 /// If you already calculated the AR parameters, auto-correlation coefficients (ACF), and
@@ -280,14 +276,11 @@ pub fn ar_dl_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign +
 /// ```
 pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign + Div>(
     x: &[T],
-    order: Option<usize>
+    order: Option<usize>,
 ) -> Result<T, ArimaError> {
-    let max_lag = match order {
-        Some(order) => Some(order + 1),
-        None => None
-    };
-    let rho = acf(&x, max_lag, false)?;
-    let cov0 = acf(&x, Some(0), true)?[0].clone();
+    let max_lag = order.map(|order| order + 1);
+    let rho = acf(x, max_lag, false)?;
+    let cov0 = acf(x, Some(0), true)?[0];
     let (_phi, var) = ar_dl_rho_cov(&rho, cov0, order).unwrap();
 
     Ok(var)
@@ -318,13 +311,13 @@ pub fn var<T: Float + From<u32> + From<f64> + Into<f64> + Copy + Add + AddAssign
 pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign + Div>(
     phi: &[T],
     rho: &[T],
-    cov0: T
+    cov0: T,
 ) -> Result<T, ArimaError> {
     assert!(rho.len() > phi.len());
 
     let mut sum: T = From::from(0.0);
     for i in 0..phi.len() {
-        sum += phi[i] * rho[i+1];
+        sum += phi[i] * rho[i + 1];
     }
     let one: T = From::from(1.0);
     Ok(cov0 * (one - sum))
@@ -354,11 +347,11 @@ pub fn var_phi_rho_cov<T: Float + From<u32> + From<f64> + Copy + Add + AddAssign
 /// ```
 pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     x: &[T],
-    max_lag: Option<usize>
+    max_lag: Option<usize>,
 ) -> Result<Vec<T>, ArimaError> {
     // get autocorrelations
-    let rho = acf(&x, max_lag, false)?;
-    let cov0 = acf(&x, Some(0), true)?[0].clone();
+    let rho = acf(x, max_lag, false)?;
+    let cov0 = acf(x, Some(0), true)?[0];
     pacf_rho_cov0(&rho, cov0, max_lag)
 }
 
@@ -388,12 +381,12 @@ pub fn pacf<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
 pub fn pacf_rho_cov0<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAssign>(
     rho: &[T],
     cov0: T,
-    max_lag: Option<usize>
+    max_lag: Option<usize>,
 ) -> Result<Vec<T>, ArimaError> {
     let max_lag = match max_lag {
         // if upper bound for max_lag is n-1
         Some(max_lag) => cmp::min(max_lag, rho.len() - 1),
-        None => rho.len() - 1
+        None => rho.len() - 1,
     };
     let m = max_lag + 1;
 
@@ -402,9 +395,9 @@ pub fn pacf_rho_cov0<T: Float + From<u32> + From<f64> + Into<f64> + Copy + AddAs
 
     // calculate AR coefficients for each solution of order 1..max_lag
     for i in 1..m {
-        let (coef, _var) = ar_dl_rho_cov(&rho, cov0, Some(i))?;
+        let (coef, _var) = ar_dl_rho_cov(rho, cov0, Some(i))?;
         // we now have a vector with i items, the last item is our partial correlation
-        y.push(From::from(coef[i-1]));
+        y.push(coef[i - 1]);
     }
     Ok(y)
 }

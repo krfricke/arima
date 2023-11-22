@@ -1,7 +1,7 @@
 extern crate rand;
+use arima::{acf, sim};
 use rand::prelude::*;
 use rand_distr::{Distribution, Normal};
-use arima::{acf, sim};
 
 fn main() {
     // initialize RNG with seed
@@ -12,13 +12,14 @@ fn main() {
 
     // simulate time series
     let ts = sim::arima_sim(
-        1000,                   // number of samples
-        Some(&[0.7, 0.2]),      // AR parameters
-        None,                   // MA parameters
-        0,                      // difference parameter
-        &|mut rng| { normal.sample(&mut rng) }, // noise fn
-        &mut rng                // RNG
-    ).unwrap();
+        1000,                               // number of samples
+        Some(&[0.7, 0.2]),                  // AR parameters
+        None,                               // MA parameters
+        0,                                  // difference parameter
+        &|mut rng| normal.sample(&mut rng), // noise fn
+        &mut rng,                           // RNG
+    )
+    .unwrap();
 
     // estimate AR parameters
     let ar = acf::ar(&ts, Some(2)).unwrap();
